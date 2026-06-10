@@ -1,0 +1,56 @@
+# ============================================================================
+#  ServiceManager – lokale Datenbankumgebung
+#  Startet:
+#    - MySQL 8.0           (Datenbank, Port 3306)
+#    - phpMyAdmin          (Web-Oberfläche, http://localhost:8080)
+#
+#  Die SQL-Skripte in ./database/init werden NUR beim ERSTEN Start (leeres
+#  Volume) automatisch in alphabetischer Reihenfolge ausgeführt:
+#    01_schema.sql  -> Struktur
+#    02_seed.sql    -> Referenz- und Demodaten
+#
+#  Start:        docker compose up -d
+#  Stoppen:      docker compose down
+#  Zurücksetzen: docker compose down -v   (löscht Daten -> Init läuft erneut)
+# ============================================================================
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: servicemanager-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: servicemanager
+      MYSQL_USER: servicemanager
+      MYSQL_PASSWORD: servicemanager_pw
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpass"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  phpmyadmin:
+    image: phpmyadmin:5
+    container_name: servicemanager-pma
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      UPLOAD_LIMIT: 64M
+    ports:
+      - "8080:80"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:
