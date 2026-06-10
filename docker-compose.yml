@@ -6,8 +6,8 @@
 #
 #  Die SQL-Skripte in ./database/init werden NUR beim ERSTEN Start (leeres
 #  Volume) automatisch in alphabetischer Reihenfolge ausgeführt:
-#    01_schema.sql  -> Struktur
-#    02_seed.sql    -> Referenz- und Demodaten
+#    schema.sql  -> Struktur (Tabellen, Schlüssel, Beziehungen)
+#    seed.sql    -> Referenz- und Startdaten
 #
 #  Start:        docker compose up -d
 #  Stoppen:      docker compose down
@@ -37,6 +37,27 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+
+  # ----------------------------------------------------------------------------
+  #  PHP-Backend (REST-API) – läuft im selben Docker-Netz wie die DB.
+  #  Erreichbar unter http://localhost:8000. Verbindet sich intern zur DB
+  #  über den Servicenamen "db" auf Port 3306 (siehe backend/config/config.php).
+  #  Quellcode ist per Volume eingehängt -> Codeänderungen wirken sofort,
+  #  ohne das Image neu zu bauen.
+  # ----------------------------------------------------------------------------
+  backend:
+    build: ./backend
+    container_name: servicemanager-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/var/www/html
+    working_dir: /var/www/html
+    command: php -S 0.0.0.0:8000 -t public public/index.php
+    depends_on:
+      db:
+        condition: service_healthy
 
   phpmyadmin:
     image: phpmyadmin:5

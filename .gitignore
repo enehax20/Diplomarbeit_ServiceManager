@@ -1,0 +1,24 @@
+# ---- Abhängigkeiten ----
+node_modules/
+
+# ---- Build-Ausgaben ----
+dist/
+build/
+
+# ---- Konfiguration mit Zugangsdaten (niemals committen) ----
+# Backend-DB-Konfiguration (nur lokal)
+backend/config/config.php
+# Frontend-Umgebungsvariablen (Beispiel .env.example wird committet)
+.env
+.env.local
+.env.*.local
+
+# ---- Logs ----
+*.log
+npm-debug.log*
+
+# ---- Editor / Betriebssystem ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
