@@ -69,6 +69,20 @@ class KundeController
 
         $pdo = Database::getConnection();
 
+        // Eindeutigkeit prüfen: E-Mail und Telefon dürfen nicht doppelt vorkommen
+        // (zusätzlich zur UNIQUE-Sicherung in der DB – hier für klare Feldmeldungen).
+        $dupErrors = [];
+        if ($email !== '' && $this->existsKundeWith($pdo, 'email', $email)) {
+            $dupErrors['email'] = 'Diese E-Mail-Adresse ist bereits vergeben.';
+        }
+        if ($telefon !== '' && $this->existsKundeWith($pdo, 'telefon', $telefon)) {
+            $dupErrors['telefon'] = 'Diese Telefonnummer ist bereits vergeben.';
+        }
+        if ($dupErrors) {
+            Response::error('Validierung fehlgeschlagen', 422, ['fields' => $dupErrors]);
+            return;
+        }
+
         // 4) Betrieb bestimmen: Das System bedient aktuell EINEN Betrieb; neue
         //    Kund:innen werden ihm zugeordnet. (Eine Betriebsauswahl ist erst
         //    bei Mehrbetrieb-Unterstützung nötig.)
@@ -87,16 +101,26 @@ class KundeController
             'INSERT INTO kunde (betrieb_id, vorname, nachname, telefon, email, strasse, plz, ort)
              VALUES (:betrieb_id, :vorname, :nachname, :telefon, :email, :strasse, :plz, :ort)'
         );
-        $stmt->execute([
-            ':betrieb_id' => $betriebId,
-            ':vorname'    => $vorname,
-            ':nachname'   => $nachname,
-            ':telefon'    => $telefon !== '' ? $telefon : null,
-            ':email'      => $email   !== '' ? $email   : null,
-            ':strasse'    => $strasse !== '' ? $strasse : null,
-            ':plz'        => $plz     !== '' ? $plz     : null,
-            ':ort'        => $ort     !== '' ? $ort     : null,
-        ]);
+        try {
+            $stmt->execute([
+                ':betrieb_id' => $betriebId,
+                ':vorname'    => $vorname,
+                ':nachname'   => $nachname,
+                ':telefon'    => $telefon !== '' ? $telefon : null,
+                ':email'      => $email   !== '' ? $email   : null,
+                ':strasse'    => $strasse !== '' ? $strasse : null,
+                ':plz'        => $plz     !== '' ? $plz     : null,
+                ':ort'        => $ort     !== '' ? $ort     : null,
+            ]);
+        } catch (\PDOException $e) {
+            // Sicherheitsnetz gegen Wettlauf zweier gleichzeitiger Anfragen:
+            // 1062 = doppelter Eintrag in einem UNIQUE-Index.
+            if (($e->errorInfo[1] ?? null) === 1062) {
+                Response::error('E-Mail-Adresse oder Telefonnummer ist bereits vergeben.', 409);
+                return;
+            }
+            throw $e;
+        }
 
         // 6) Den neu angelegten Datensatz zurücklesen (inkl. erstellt_am aus der DB).
         $newId = (int) $pdo->lastInsertId();
@@ -110,5 +134,55 @@ class KundeController
 
         // 201 = Created: Ressource wurde neu angelegt.
         Response::json($kunde, 201);
+    }
+
+    /** DELETE /kunden/{id} – löscht eine Kund:in, sofern nichts verknüpft ist. */
+    public function delete(array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        if ($id <= 0) {
+            Response::error('Ungültige ID', 400);
+            return;
+        }
+
+        $pdo = Database::getConnection();
+
+        try {
+            $stmt = $pdo->prepare('DELETE FROM kunde WHERE kunde_id = :id');
+            $stmt->execute([':id' => $id]);
+
+            // rowCount() = 0 -> es gab keine Kund:in mit dieser ID.
+            if ($stmt->rowCount() === 0) {
+                Response::error('Kund:in nicht gefunden', 404);
+                return;
+            }
+
+            // 204 = No Content: erfolgreich gelöscht, nichts zurückzugeben.
+            http_response_code(204);
+        } catch (\PDOException $e) {
+            // SQLSTATE 23000 = Integritätsverletzung. Hier: ein Fremdschlüssel
+            // (servicegegenstand -> kunde, ON DELETE RESTRICT) verhindert das
+            // Löschen, weil noch Daten an der Kund:in hängen.
+            if ($e->getCode() === '23000') {
+                Response::error(
+                    'Kund:in kann nicht gelöscht werden, weil noch Servicegegenstände oder Aufträge zugeordnet sind.',
+                    409 // Conflict
+                );
+                return;
+            }
+            throw $e; // andere DB-Fehler an den zentralen Fehler-Handler weiterreichen
+        }
+    }
+
+    /** Prüft, ob bereits eine Kund:in mit diesem Wert in der Spalte existiert. */
+    private function existsKundeWith(\PDO $pdo, string $column, string $value): bool
+    {
+        // Spaltenname aus fester Whitelist (kein Nutzer-Input) -> kein Injection-Risiko.
+        if (!in_array($column, ['email', 'telefon'], true)) {
+            return false;
+        }
+        $stmt = $pdo->prepare("SELECT 1 FROM kunde WHERE $column = :value LIMIT 1");
+        $stmt->execute([':value' => $value]);
+        return (bool) $stmt->fetchColumn();
     }
 }

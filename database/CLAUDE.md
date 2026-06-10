@@ -78,6 +78,10 @@ They must never drift apart. The history table is the source of truth for the
 - **`kunde.betrieb_id` and `mitarbeiter.betrieb_id` are `NOT NULL`** → a Betrieb
   must exist before inserting a Kunde or Mitarbeiter. Exactly one Betrieb is
   seeded; new Kunden attach to it.
+- **`kunde.email` and `kunde.telefon` are `UNIQUE`** → no two Kunden may share a
+  non-NULL email or phone (DB constraint + backend pre-check returning a 422
+  field error). Empty/NULL may repeat. `(vorname, nachname)` is deliberately
+  **not** unique — same-named people are different customers.
 - **Never hard-delete a Mitarbeiter** → set `aktiv = 0` (keeps history consistent).
 - Deleting a Kunde/Servicegegenstand is allowed only if nothing links to it;
   the DB blocks it otherwise (RESTRICT) → catch that and show a clear German message.

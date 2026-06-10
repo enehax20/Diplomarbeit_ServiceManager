@@ -54,9 +54,26 @@ export default function KundenPage() {
       setKunden((prev) => [...prev, neu]);
       setForm(EMPTY_FORM); // Formular zurücksetzen
     } catch (e) {
-      setError(e.message);
+      // Feld-spezifische Meldungen bevorzugt anzeigen (z. B. doppelte E-Mail/Telefon).
+      const fieldMessages = e.fields ? Object.values(e.fields).join(" ") : null;
+      setError(fieldMessages || e.message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  // Eine Kund:in löschen (nach Rückfrage). Bei verknüpften Daten blockiert das
+  // Backend mit einer verständlichen Meldung (HTTP 409).
+  async function handleDelete(kunde) {
+    const name = `${kunde.vorname} ${kunde.nachname}`.trim();
+    if (!window.confirm(`Kund:in „${name}" wirklich löschen?`)) return;
+    setError(null);
+    try {
+      await kundenApi.remove(kunde.kunde_id);
+      // Aus der Liste entfernen, ohne neu zu laden.
+      setKunden((prev) => prev.filter((k) => k.kunde_id !== kunde.kunde_id));
+    } catch (e) {
+      setError(e.message);
     }
   }
 
@@ -119,6 +136,7 @@ export default function KundenPage() {
                 <th>Telefon</th>
                 <th>E-Mail</th>
                 <th>Ort</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -130,6 +148,15 @@ export default function KundenPage() {
                   <td>{k.telefon || "—"}</td>
                   <td>{k.email || "—"}</td>
                   <td>{k.ort || "—"}</td>
+                  <td className="row-actions">
+                    <button
+                      type="button"
+                      className="btn-delete"
+                      onClick={() => handleDelete(k)}
+                    >
+                      Löschen
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

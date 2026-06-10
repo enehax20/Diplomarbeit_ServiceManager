@@ -97,6 +97,10 @@ CREATE TABLE kunde (
   ort          VARCHAR(100) NULL,
   erstellt_am  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (kunde_id),
+  -- E-Mail und Telefon müssen je Kund:in eindeutig sein. NULL bleibt erlaubt,
+  -- da MySQL mehrere NULL-Werte in einem UNIQUE-Index zulässt (optionale Felder).
+  UNIQUE KEY uq_kunde_email (email),
+  UNIQUE KEY uq_kunde_telefon (telefon),
   KEY idx_kunde_betrieb (betrieb_id),
   KEY idx_kunde_name (nachname, vorname),
   CONSTRAINT fk_kunde_betrieb FOREIGN KEY (betrieb_id)

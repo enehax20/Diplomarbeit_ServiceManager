@@ -30,4 +30,6 @@ export const kundenApi = {
   // POST /kunden -> neue Kund:in anlegen, gibt den angelegten Datensatz zurück
   create: (kunde) =>
     request("/kunden", { method: "POST", body: JSON.stringify(kunde) }),
+  // DELETE /kunden/{id} -> löscht eine Kund:in
+  remove: (id) => request(`/kunden/${id}`, { method: "DELETE" }),
 };

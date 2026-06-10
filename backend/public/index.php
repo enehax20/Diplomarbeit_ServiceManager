@@ -56,8 +56,9 @@ $router->get('/', function (): void {
 });
 
 $kundeController = new KundeController();
-$router->get('/kunden',  fn() => $kundeController->index());
-$router->post('/kunden', fn() => $kundeController->create());
+$router->get('/kunden',     fn() => $kundeController->index());
+$router->post('/kunden',    fn() => $kundeController->create());
+$router->delete('/kunden/{id}', fn($params) => $kundeController->delete($params));
 
 // --- 4) Anfrage abarbeiten; Fehler einheitlich als JSON ausgeben --------------
 try {

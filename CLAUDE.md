@@ -84,6 +84,20 @@ requirements, not nice-to-haves.
   email/SMS notifications, analytics dashboards, multi-tenant admin,
   internationalisation. Do not add these even if they seem useful.
 
+## Settled design decisions (don't re-litigate)
+
+- **Audience:** internal tool for **one shop's staff**. Customers are *records*,
+  not users — there is no customer login/portal. Mitarbeiter log in and operate
+  the app; Kunden never do.
+- **Kunde identity:** `(vorname, nachname)` is intentionally **not unique** —
+  two different people may share a name. Uniqueness is enforced on `kunde.email`
+  and `kunde.telefon` only (DB `UNIQUE` + backend check); the real identity is
+  the surrogate key `kunde_id`. Empty/NULL email or telefon may repeat.
+- **Roles:** keep `mitarbeiter.rolle ENUM('admin','mitarbeiter')`, but do **not**
+  build a full permission system. Everyone may manage Kunden / Servicegegenstände
+  / Aufträge; only `admin` (owner/manager) may manage staff (create/deactivate
+  Mitarbeiter, reset passwords) — and only once login (M6) exists. Simple login first.
+
 ## Milestones
 
 - **M1** Concept & setup — DONE.
