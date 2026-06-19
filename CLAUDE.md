@@ -47,9 +47,8 @@ requirements, not nice-to-haves.
 ## Language & naming
 
 - **Code** (variables, functions, files): **English**.
-- **Domain terms stay German**, matching the DB: Kunde, Auftrag,
-  Servicegegenstand, Betrieb, Mitarbeiter, Branche, Status.
-  e.g. `getKundeById()`, `$auftragId`, `AuftragController`.
+- **Domain terms stay German**, matching the DB: Kunde, Auftrag, Mitarbeiter,
+  Status. e.g. `getKundeById()`, `$auftragId`, `AuftragController`.
 - **Comments:** English, with German domain terms where natural.
 - **UI text shown to users:** German. **Thesis documentation:** German.
 
@@ -71,18 +70,24 @@ requirements, not nice-to-haves.
   `src/` holds classes (PSR-4-style `App\` autoload); `config/config.php` holds
   DB credentials and is **gitignored** (`config.example.php` is the template).
 - `frontend/` — Vite + React app (built incrementally).
-- `database/init/` — `schema.sql` (structure) and `seed.sql` (config data + one
-  Betrieb). Run automatically on first DB start, alphabetically.
+- `database/init/` — `schema.sql` (structure) and `seed.sql` (intentionally empty;
+  no config data in the simplified model). Run automatically on first DB start.
+- `database/drop_tables.sql` — standalone manual reset (drops all tables).
+- `database/scripts/create_admin.php` — CLI script that creates an admin login user.
 - `docker-compose.yml` — MySQL 8 + phpMyAdmin + the PHP backend.
-- `datenmodell.md` — data-model thesis chapter; ER diagram in §9 (Mermaid).
+- `datenmodell.md` — data-model thesis chapter; ER diagram in §7 (Mermaid).
 
 ## Scope (defined by the Antrag — stay inside it)
 
-- **DO:** CRUD for Kunde + Servicegegenstand (with dynamic branch fields);
-  create/manage Auftrag with status flow + assignments; simple login.
-- **DON'T (out of scope):** invoicing/payments, inventory/parts management,
-  email/SMS notifications, analytics dashboards, multi-tenant admin,
-  internationalisation. Do not add these even if they seem useful.
+- **DO:** Stammdaten CRUD for **Kunde** and **Mitarbeiter**; create/manage
+  **Auftrag** with status flow + assignments (the repaired object is a generic
+  text field on the Auftrag — no branch-specific fields); simple login with two
+  roles. A small homepage/cockpit (e.g. number of Kunden, Kunden with most
+  Aufträge) is in scope.
+- **DON'T (out of scope):** branch-specific dynamic fields / EAV, a separate
+  Servicegegenstand or Betrieb table, invoicing/payments, inventory/parts,
+  email/SMS notifications, multi-tenant admin, internationalisation. Do not add
+  these even if they seem useful.
 
 ## Settled design decisions (don't re-litigate)
 
@@ -94,14 +99,19 @@ requirements, not nice-to-haves.
   and `kunde.telefon` only (DB `UNIQUE` + backend check); the real identity is
   the surrogate key `kunde_id`. Empty/NULL email or telefon may repeat.
 - **Roles:** keep `mitarbeiter.rolle ENUM('admin','mitarbeiter')`, but do **not**
-  build a full permission system. Everyone may manage Kunden / Servicegegenstände
-  / Aufträge; only `admin` (owner/manager) may manage staff (create/deactivate
-  Mitarbeiter, reset passwords) — and only once login (M6) exists. Simple login first.
+  build a full permission system. Everyone may manage Kunden / Aufträge; only
+  `admin` (owner/manager) may manage staff (create/deactivate Mitarbeiter, reset
+  passwords) — and only once login (M6) exists. Simple login first.
+- **Model is deliberately small (4 tables):** `mitarbeiter`, `kunde`, `auftrag`,
+  `auftrag_status_historie`. The repaired object is captured **generically** on
+  the Auftrag (Antrag wording) — there is no Branche / EAV / Servicegegenstand /
+  Betrieb table. Status is an ENUM on `auftrag`. See `database/CLAUDE.md`.
 
 ## Milestones
 
 - **M1** Concept & setup — DONE.
-- **M2** Database (until 27.06) — schema done; seed config data + one Betrieb in place.
+- **M2** Database (until 27.06) — **simplified to 4 tables** per the official Antrag
+  (Kunde, Mitarbeiter, Auftrag, Statusverlauf). Old 10-table model retired.
 - **M3** Backend + frontend skeleton (28.06–18.07) — backend skeleton runs; frontend next.
 - **M4** Stammdaten CRUD (19.07–02.08).
 - **M5** Auftrag + status flow (03.08–17.08).
@@ -114,8 +124,10 @@ pattern for the other entities.
 
 ## Current status
 
-- Database: 10 tables created. Seeded config data: 3 Branchen, 5 Auftragsstatus,
-  9 Feld-Definitionen, and 1 Betrieb (`Demo Reparatur GmbH`). No demo Kunden/Aufträge.
-- Backend: skeleton runs in Docker. Endpoints `GET /kunden` and `POST /kunden`
-  work (verified).
+- Database: **simplified to 4 tables** (`mitarbeiter`, `kunde`, `auftrag`,
+  `auftrag_status_historie`). No config/reference seed; `seed.sql` is empty.
+  First admin login user is created via `database/scripts/create_admin.php`.
+- Backend: skeleton runs in Docker. `GET /kunden` and `POST /kunden` exist but
+  still reference the old `betrieb_id` column — **needs updating to the new
+  schema** (deferred; do not touch backend/frontend until asked).
 - Frontend: not built yet — the next step of the Kunde vertical slice.

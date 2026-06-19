@@ -41,17 +41,27 @@ npm run dev
 
 - App: http://localhost:5173
 
+**3) Ersten Login-Benutzer (Admin) anlegen:**
+
+```bash
+docker compose run --rm -v "${PWD}/database/scripts:/scripts" backend php /scripts/create_admin.php admin
+```
+
+Das Skript erzeugt einen Admin-Benutzer und gibt das Passwort einmalig im Klartext aus.
+
 **Stoppen:** `docker compose down` · **Datenbank zurücksetzen** (löscht alle Daten,
 Init-Skripte laufen erneut): `docker compose down -v`
 
 ## Projektstruktur
 
 ```
-backend/            PHP-REST-API (public/index.php = Einstiegspunkt, src/, config/)
-frontend/           React-App (Vite)
-database/init/      schema.sql (Struktur) + seed.sql (Konfigurationsdaten)
-docker-compose.yml  MySQL 8 + phpMyAdmin + Backend
-datenmodell.md      Beschreibung des Datenmodells (inkl. ER-Diagramm)
+backend/                  PHP-REST-API (public/index.php = Einstiegspunkt, src/, config/)
+frontend/                 React-App (Vite)
+database/init/            schema.sql (Struktur) + seed.sql (leer – keine Konfigurationsdaten)
+database/drop_tables.sql  Manuelles Reset-Skript (löscht alle Tabellen)
+database/scripts/         create_admin.php (legt einen Admin-Login an)
+docker-compose.yml        MySQL 8 + phpMyAdmin + Backend
+datenmodell.md            Beschreibung des Datenmodells (inkl. ER-Diagramm)
 ```
 
 ## Dokumentation
