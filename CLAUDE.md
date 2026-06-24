@@ -130,14 +130,30 @@ pattern for the other entities.
 - Backend: runs in Docker, matches the 4-table schema. Endpoints: `POST /login`,
   `POST /logout`, `GET /me` (session-based auth, roles `admin`/`mitarbeiter`),
   and full Kunde CRUD `GET/POST /kunden`, `PUT /kunden/{id}`, `DELETE /kunden/{id}`
-  (all Kunde routes require login). Auth helper: `src/Auth.php`.
+  (all Kunde routes require login). `GET /kunden` is **paginated** (`page`,
+  `perPage`, optional `q` name/email search) and returns
+  `{data,total,page,perPage,totalPages}`. Auth helper: `src/Auth.php`.
   Admin-only Mitarbeiter management: `GET/POST /mitarbeiter`, `PUT /mitarbeiter/{id}`,
   `DELETE /mitarbeiter/{id}` (behind `Auth::requireAdmin()`; admin types the password;
   hard delete allowed but blocked by FK RESTRICT once orders exist → deactivate via
   `aktiv` instead; self-delete/​self-deactivate/​self-demote blocked). The created
   Mitarbeiter then logs in themselves with their own credentials.
+  **Auftrag (M5):** `GET /auftraege`, `GET /auftraege/{id}` (incl. status history),
+  `POST /auftraege`, `PUT /auftraege/{id}` (Stammfelder), `PUT /auftraege/{id}/status`
+  (status change — **one transaction** updates `auftrag.status` + inserts a
+  `auftrag_status_historie` row), `DELETE /auftraege/{id}`. All require login; all
+  staff see all orders. Lightweight dropdown lists: `GET /kunden/auswahl` and
+  `GET /mitarbeiter/auswahl` (the latter login-only, not admin-only).
 - Frontend: login gate + header (user + role badge + logout). Kunden page with
-  create / **edit** / delete; admin-only Mitarbeiter page (create/edit, typed
-  password). Auth state in `src/auth.jsx`, login in `src/pages/LoginPage.jsx`.
-  Uses `fetch` with `credentials: 'include'`.
-- Open next: Auftrag + status flow (M5).
+  create / **edit** / delete, **server-side pagination + search**; Aufträge page
+  (create/edit, inline status change with colored badges, expandable status
+  history); admin-only Mitarbeiter page (create/edit, typed password). Auth state
+  in `src/auth.jsx`, login in `src/pages/LoginPage.jsx`. Uses `fetch` with
+  `credentials: 'include'`. Status labels/values live in `src/api.js`
+  (`AUFTRAG_STATUS`, `statusLabel`).
+- Demo data: `database/scripts/seed_demo_data.php` generates realistic Austrian
+  Kunden (default 250), several demo Mitarbeiter (shared password `demo1234`),
+  and demo Aufträge with a consistent status history. Reproducible, idempotent-ish
+  (unique email/phone per run; collisions skipped). Run:
+  `docker compose run --rm -v "${PWD}/database/scripts:/scripts" backend php /scripts/seed_demo_data.php [kunden] [auftraege]`.
+- Open next: M6 polish (login hardening / validation review) and M7 documentation.

@@ -43,8 +43,15 @@ export const authApi = {
 
 // Konkrete Endpunkte für Kund:innen.
 export const kundenApi = {
-  // GET /kunden -> Liste aller Kund:innen
-  list: () => request("/kunden"),
+  // GET /kunden?page=&perPage=&q= -> EINE Seite Kund:innen.
+  // Antwort: { data, total, page, perPage, totalPages }
+  list: ({ page = 1, perPage = 20, q = "" } = {}) => {
+    const params = new URLSearchParams({ page, perPage });
+    if (q) params.set("q", q);
+    return request(`/kunden?${params.toString()}`);
+  },
+  // GET /kunden/auswahl -> schlanke Liste (ID + Name) für Auswahlfelder
+  auswahl: () => request("/kunden/auswahl"),
   // POST /kunden -> neue Kund:in anlegen, gibt den angelegten Datensatz zurück
   create: (kunde) =>
     request("/kunden", { method: "POST", body: JSON.stringify(kunde) }),
@@ -67,4 +74,49 @@ export const mitarbeiterApi = {
     request(`/mitarbeiter/${id}`, { method: "PUT", body: JSON.stringify(mitarbeiter) }),
   // DELETE /mitarbeiter/{id} -> löscht eine:n Mitarbeiter:in
   remove: (id) => request(`/mitarbeiter/${id}`, { method: "DELETE" }),
+  // GET /mitarbeiter/auswahl -> aktive Mitarbeiter:innen (ID + Name), auch für
+  // Nicht-Admins erreichbar (Zuweisung am Auftrag).
+  auswahl: () => request("/mitarbeiter/auswahl"),
 };
+
+// Endpunkte für Aufträge.
+export const auftraegeApi = {
+  // GET /auftraege?page=&perPage=&q= -> EINE Seite Aufträge (zuletzt aktualisierte zuerst).
+  // Antwort: { data, total, page, perPage, totalPages }
+  list: ({ page = 1, perPage = 10, q = "" } = {}) => {
+    const params = new URLSearchParams({ page, perPage });
+    if (q) params.set("q", q);
+    return request(`/auftraege?${params.toString()}`);
+  },
+  // GET /auftraege/{id} -> ein Auftrag inkl. Statusverlauf (historie)
+  get: (id) => request(`/auftraege/${id}`),
+  // POST /auftraege -> neuen Auftrag anlegen
+  create: (auftrag) =>
+    request("/auftraege", { method: "POST", body: JSON.stringify(auftrag) }),
+  // PUT /auftraege/{id} -> Stammfelder bearbeiten (nicht den Status)
+  update: (id, auftrag) =>
+    request(`/auftraege/${id}`, { method: "PUT", body: JSON.stringify(auftrag) }),
+  // PUT /auftraege/{id}/status -> Status ändern (+ Verlaufszeile)
+  setStatus: (id, status, bemerkung = "") =>
+    request(`/auftraege/${id}/status`, {
+      method: "PUT",
+      body: JSON.stringify({ status, bemerkung }),
+    }),
+  // DELETE /auftraege/{id} -> Auftrag löschen
+  remove: (id) => request(`/auftraege/${id}`, { method: "DELETE" }),
+};
+
+// Die fünf Status-Werte mit deutscher Beschriftung (Reihenfolge = Arbeitsfluss).
+// Werte müssen exakt dem ENUM in der Datenbank entsprechen.
+export const AUFTRAG_STATUS = [
+  { wert: "ANGENOMMEN", label: "Angenommen" },
+  { wert: "IN_DIAGNOSE", label: "In Diagnose" },
+  { wert: "IN_REPARATUR", label: "In Reparatur" },
+  { wert: "FERTIG", label: "Fertig" },
+  { wert: "ABGEHOLT", label: "Abgeholt" },
+];
+
+// Hilfsfunktion: deutsche Beschriftung zu einem Status-Wert.
+export function statusLabel(wert) {
+  return AUFTRAG_STATUS.find((s) => s.wert === wert)?.label ?? wert;
+}

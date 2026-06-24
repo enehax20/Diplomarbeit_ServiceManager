@@ -155,13 +155,22 @@ body {
   color: var(--muted);
 }
 .form-grid input,
-.form-grid select {
+.form-grid select,
+.form-grid textarea {
   padding: 0.5rem 0.6rem;
   border: 1px solid var(--border);
   border-radius: 6px;
   font-size: 0.95rem;
   color: var(--text);
   background: #fff;
+  font-family: inherit;
+}
+/* Felder, die über die ganze Formularbreite gehen sollen (z. B. Textfelder). */
+.form-grid label.full {
+  grid-column: 1 / -1;
+}
+.form-grid textarea {
+  resize: vertical;
 }
 .form-actions {
   grid-column: 1 / -1;
@@ -260,6 +269,110 @@ button:disabled {
   border: 1px solid #fecaca;
   padding: 0.5rem 0.75rem;
   border-radius: 6px;
+}
+
+/* Kopfzeile einer Liste: Titel links, Suchfeld rechts. */
+.list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.list-head h2 {
+  margin: 0;
+}
+.search-input {
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  min-width: 220px;
+}
+
+/* Seitennavigation (Pagination). */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+/* Status-Auswahl direkt in der Auftragsliste + farbige Status-Kennzeichnung. */
+.status-select {
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* Kleine farbige Status-Plakette (im Verlauf). */
+.status-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  color: #fff;
+}
+
+/* Farben je Status (gleiche Logik für Auswahl-Rahmen und Plakette). */
+.status-ANGENOMMEN {
+  border-color: #6b7280;
+}
+.status-badge.status-ANGENOMMEN {
+  background: #6b7280;
+}
+.status-IN_DIAGNOSE {
+  border-color: #d97706;
+}
+.status-badge.status-IN_DIAGNOSE {
+  background: #d97706;
+}
+.status-IN_REPARATUR {
+  border-color: #2563eb;
+}
+.status-badge.status-IN_REPARATUR {
+  background: #2563eb;
+}
+.status-FERTIG {
+  border-color: #16a34a;
+}
+.status-badge.status-FERTIG {
+  background: #16a34a;
+}
+.status-ABGEHOLT {
+  border-color: #0f766e;
+}
+.status-badge.status-ABGEHOLT {
+  background: #0f766e;
+}
+
+/* Aufgeklappter Detailbereich (Statusverlauf) unter einer Auftragszeile. */
+.detail-row td {
+  background: #f9fafb;
+}
+.detail-box {
+  padding: 0.5rem 0.25rem;
+}
+.detail-box p {
+  margin: 0.25rem 0;
+}
+.historie {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+  display: grid;
+  gap: 0.35rem;
+}
+.historie li {
+  font-size: 0.9rem;
 }
 
 @media (max-width: 560px) {

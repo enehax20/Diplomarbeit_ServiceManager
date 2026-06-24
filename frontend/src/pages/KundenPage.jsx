@@ -12,25 +12,44 @@ const EMPTY_FORM = {
   ort: "",
 };
 
+const PER_PAGE = 20; // Kund:innen pro Seite
+
 export default function KundenPage() {
-  const [kunden, setKunden] = useState([]); // Liste der Kund:innen
+  const [kunden, setKunden] = useState([]); // Kund:innen der AKTUELLEN Seite
   const [form, setForm] = useState(EMPTY_FORM); // aktuelle Formularwerte
   const [editId, setEditId] = useState(null); // null = anlegen, sonst bearbeiten
   const [loading, setLoading] = useState(true); // Liste wird geladen
   const [saving, setSaving] = useState(false); // Formular wird gesendet
   const [error, setError] = useState(null); // Fehlermeldung (Laden/Speichern)
 
-  // Beim ersten Anzeigen die Liste vom Backend holen.
+  // Pagination + Suche (serverseitig: das Backend liefert nur eine Seite).
+  const [page, setPage] = useState(1); // aktuelle Seite (1-basiert)
+  const [total, setTotal] = useState(0); // Gesamtzahl der Treffer
+  const [totalPages, setTotalPages] = useState(1); // Anzahl Seiten
+  const [query, setQuery] = useState(""); // Suchbegriff (Name/E-Mail)
+
+  // Liste laden, sobald sich Seite oder Suchbegriff ändert.
+  // Kleiner Timer (Debounce): beim Tippen nicht bei jedem Tastendruck laden.
   useEffect(() => {
-    loadKunden();
-  }, []);
+    const timer = setTimeout(() => {
+      loadKunden();
+    }, 300);
+    return () => clearTimeout(timer);
+    // loadKunden nutzt page/query aus dem Closure -> bewusst als Abhängigkeit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, query]);
 
   async function loadKunden() {
     setLoading(true);
     setError(null);
     try {
-      const data = await kundenApi.list();
-      setKunden(data);
+      const res = await kundenApi.list({ page, perPage: PER_PAGE, q: query });
+      setKunden(res.data);
+      setTotal(res.total);
+      setTotalPages(res.totalPages);
+      // Falls das Backend die Seite begrenzt hat (z. B. nach dem Löschen des
+      // letzten Eintrags einer Seite), unseren Zustand angleichen.
+      if (res.page !== page) setPage(res.page);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -42,6 +61,12 @@ export default function KundenPage() {
   function handleChange(event) {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  }
+
+  // Suchfeld: bei jeder Änderung zurück auf Seite 1.
+  function handleSearch(event) {
+    setQuery(event.target.value);
+    setPage(1);
   }
 
   // Eine Zeile zum Bearbeiten ins Formular laden.
@@ -75,17 +100,14 @@ export default function KundenPage() {
     setError(null);
     try {
       if (editId === null) {
-        // Anlegen
-        const neu = await kundenApi.create(form);
-        setKunden((prev) => [...prev, neu]);
+        await kundenApi.create(form);
       } else {
-        // Bearbeiten: den geänderten Datensatz in der Liste ersetzen.
-        const geaendert = await kundenApi.update(editId, form);
-        setKunden((prev) =>
-          prev.map((k) => (k.kunde_id === editId ? geaendert : k))
-        );
+        await kundenApi.update(editId, form);
       }
       cancelEdit(); // Formular zurücksetzen und Modus auf "anlegen"
+      // Bei serverseitiger Pagination einfach die aktuelle Seite neu laden,
+      // damit Sortierung, Seitenanzahl und Gesamtzahl korrekt bleiben.
+      await loadKunden();
     } catch (e) {
       // Feld-spezifische Meldungen bevorzugt anzeigen (z. B. doppelte E-Mail/Telefon).
       const fieldMessages = e.fields ? Object.values(e.fields).join(" ") : null;
@@ -103,9 +125,8 @@ export default function KundenPage() {
     setError(null);
     try {
       await kundenApi.remove(kunde.kunde_id);
-      setKunden((prev) => prev.filter((k) => k.kunde_id !== kunde.kunde_id));
-      // Falls gerade diese Kund:in bearbeitet wurde: Formular zurücksetzen.
       if (editId === kunde.kunde_id) cancelEdit();
+      await loadKunden(); // aktuelle Seite neu laden
     } catch (e) {
       setError(e.message);
     }
@@ -167,54 +188,90 @@ export default function KundenPage() {
       </section>
 
       <section className="card">
-        <h2>Kund:innen ({kunden.length})</h2>
+        <div className="list-head">
+          <h2>Kund:innen ({total})</h2>
+          <input
+            className="search-input"
+            type="search"
+            placeholder="Suchen (Name oder E-Mail) …"
+            value={query}
+            onChange={handleSearch}
+          />
+        </div>
 
         {!editing && error && <p className="error">{error}</p>}
 
         {loading ? (
           <p>Wird geladen …</p>
         ) : kunden.length === 0 ? (
-          <p className="muted">Noch keine Kund:innen vorhanden.</p>
+          <p className="muted">
+            {query ? "Keine Treffer für die Suche." : "Noch keine Kund:innen vorhanden."}
+          </p>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Telefon</th>
-                <th>E-Mail</th>
-                <th>Ort</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {kunden.map((k) => (
-                <tr key={k.kunde_id} className={k.kunde_id === editId ? "row-editing" : ""}>
-                  <td>
-                    {k.nachname}, {k.vorname}
-                  </td>
-                  <td>{k.telefon || "—"}</td>
-                  <td>{k.email || "—"}</td>
-                  <td>{k.ort || "—"}</td>
-                  <td className="row-actions">
-                    <button
-                      type="button"
-                      className="btn-edit"
-                      onClick={() => startEdit(k)}
-                    >
-                      Bearbeiten
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-delete"
-                      onClick={() => handleDelete(k)}
-                    >
-                      Löschen
-                    </button>
-                  </td>
+          <>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Telefon</th>
+                  <th>E-Mail</th>
+                  <th>Ort</th>
+                  <th></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {kunden.map((k) => (
+                  <tr key={k.kunde_id} className={k.kunde_id === editId ? "row-editing" : ""}>
+                    <td>
+                      {k.nachname}, {k.vorname}
+                    </td>
+                    <td>{k.telefon || "—"}</td>
+                    <td>{k.email || "—"}</td>
+                    <td>{k.ort || "—"}</td>
+                    <td className="row-actions">
+                      <button
+                        type="button"
+                        className="btn-edit"
+                        onClick={() => startEdit(k)}
+                      >
+                        Bearbeiten
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-delete"
+                        onClick={() => handleDelete(k)}
+                      >
+                        Löschen
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Seitennavigation */}
+            <div className="pagination">
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+              >
+                ← Zurück
+              </button>
+              <span className="muted">
+                Seite {page} von {totalPages}
+              </span>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+              >
+                Weiter →
+              </button>
+            </div>
+          </>
         )}
       </section>
     </div>

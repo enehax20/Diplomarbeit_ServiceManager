@@ -17,19 +17,96 @@ use App\Response;
  */
 class KundeController
 {
-    /** GET /kunden – alle Kund:innen, sortiert nach Name. */
+    /**
+     * GET /kunden – Kund:innen seitenweise (Pagination), sortiert nach Name.
+     *
+     * Query-Parameter (alle optional):
+     *   page    – gewünschte Seite (1-basiert, Standard 1)
+     *   perPage – Datensätze pro Seite (Standard 20, max. 100)
+     *   q       – einfache Namens-/E-Mail-Suche (LIKE), damit man in vielen
+     *             Datensätzen schnell findet
+     *
+     * Antwortformat:
+     *   { "data": [...], "total": int, "page": int, "perPage": int, "totalPages": int }
+     *
+     * Begründung Pagination: Bei mehreren hundert Kund:innen würde ein einziger
+     * Abruf die Datenbank, das Netzwerk und den Browser unnötig belasten. Wir
+     * holen nur die aktuelle Seite (LIMIT/OFFSET) und liefern die Gesamtzahl mit,
+     * damit das Frontend die Seitennavigation aufbauen kann.
+     */
     public function index(): void
     {
         $pdo = Database::getConnection();
+
+        // --- Parameter lesen und in sinnvolle Grenzen zwingen (clamp) ---------
+        $page    = max(1, (int) ($_GET['page'] ?? 1));
+        $perPage = (int) ($_GET['perPage'] ?? 20);
+        $perPage = max(1, min(100, $perPage)); // 1..100
+        $q       = trim((string) ($_GET['q'] ?? ''));
+
+        // --- Optionale Suche: WHERE-Bedingung + Parameter zusammenbauen -------
+        $where  = '';
+        $params = [];
+        if ($q !== '') {
+            // LIKE über Vor-/Nachname und E-Mail. Prepared Statement -> sicher.
+            // Hinweis: Bei echten Prepared Statements (EMULATE_PREPARES = false)
+            // darf derselbe benannte Platzhalter NICHT mehrfach vorkommen –
+            // daher drei eigene Platzhalter mit demselben Wert.
+            $where = 'WHERE vorname LIKE :q1 OR nachname LIKE :q2 OR email LIKE :q3';
+            $like = '%' . $q . '%';
+            $params[':q1'] = $like;
+            $params[':q2'] = $like;
+            $params[':q3'] = $like;
+        }
+
+        // --- Gesamtzahl (für die Seitenanzahl) --------------------------------
+        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM kunde $where");
+        $countStmt->execute($params);
+        $total = (int) $countStmt->fetchColumn();
+
+        $totalPages = (int) max(1, ceil($total / $perPage));
+        // Seite begrenzen, falls jenseits des Endes angefragt wurde.
+        $page   = min($page, $totalPages);
+        $offset = ($page - 1) * $perPage;
+
+        // --- Aktuelle Seite holen ---------------------------------------------
+        // LIMIT/OFFSET als Integer direkt einsetzen: Werte sind oben streng
+        // validiert (reine Ganzzahlen), daher kein Injection-Risiko. (MySQL
+        // akzeptiert für LIMIT/OFFSET keine gebundenen Parameter im emulationsfreien
+        // Modus zuverlässig.)
+        $sql = "SELECT kunde_id, vorname, nachname, telefon, email,
+                       strasse, plz, ort, erstellt_am
+                FROM kunde
+                $where
+                ORDER BY nachname, vorname
+                LIMIT $perPage OFFSET $offset";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $kunden = $stmt->fetchAll();
+
+        Response::json([
+            'data'       => $kunden,
+            'total'      => $total,
+            'page'       => $page,
+            'perPage'    => $perPage,
+            'totalPages' => $totalPages,
+        ], 200);
+    }
+
+    /**
+     * GET /kunden/auswahl – schlanke Liste ALLER Kund:innen (nur ID + Name)
+     * für Auswahlfelder (z. B. die Kund:in beim Anlegen eines Auftrags).
+     * Bewusst ohne Pagination, aber nur mit den nötigen Spalten.
+     */
+    public function auswahl(): void
+    {
+        $pdo = Database::getConnection();
         $stmt = $pdo->query(
-            'SELECT kunde_id, vorname, nachname, telefon, email,
-                    strasse, plz, ort, erstellt_am
+            'SELECT kunde_id, vorname, nachname
              FROM kunde
              ORDER BY nachname, vorname'
         );
-        $kunden = $stmt->fetchAll();
-
-        Response::json($kunden, 200);
+        Response::json($stmt->fetchAll(), 200);
     }
 
     /** POST /kunden – legt eine neue Kund:in an und gibt den Datensatz zurück. */

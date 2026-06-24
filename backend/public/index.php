@@ -14,6 +14,7 @@ use App\Router;
 use App\Controllers\AuthController;
 use App\Controllers\KundeController;
 use App\Controllers\MitarbeiterController;
+use App\Controllers\AuftragController;
 
 // --- 1) Autoloader: lädt Klassen automatisch aus dem src/-Verzeichnis ---------
 //     Begründung: spart manuelle require-Aufrufe. Konvention: die Klasse
@@ -61,8 +62,9 @@ $router->get('/', function (): void {
         'status'    => 'ok',
         'endpoints' => [
             'POST /login', 'POST /logout', 'GET /me',
-            'GET /kunden', 'POST /kunden', 'PUT /kunden/{id}', 'DELETE /kunden/{id}',
-            'GET /mitarbeiter', 'POST /mitarbeiter', 'PUT /mitarbeiter/{id}', 'DELETE /mitarbeiter/{id}',
+            'GET /kunden', 'GET /kunden/auswahl', 'POST /kunden', 'PUT /kunden/{id}', 'DELETE /kunden/{id}',
+            'GET /mitarbeiter', 'GET /mitarbeiter/auswahl', 'POST /mitarbeiter', 'PUT /mitarbeiter/{id}', 'DELETE /mitarbeiter/{id}',
+            'GET /auftraege', 'GET /auftraege/{id}', 'POST /auftraege', 'PUT /auftraege/{id}', 'PUT /auftraege/{id}/status', 'DELETE /auftraege/{id}',
         ],
     ]);
 });
@@ -80,6 +82,11 @@ $router->get('/kunden',         function () use ($kundeController) {
     Auth::requireLogin();
     $kundeController->index();
 });
+// Schlanke Auswahlliste (ID + Name) für Auswahlfelder, z. B. im Auftrag.
+$router->get('/kunden/auswahl', function () use ($kundeController) {
+    Auth::requireLogin();
+    $kundeController->auswahl();
+});
 $router->post('/kunden',        function () use ($kundeController) {
     Auth::requireLogin();
     $kundeController->create();
@@ -96,6 +103,12 @@ $router->delete('/kunden/{id}', function ($params) use ($kundeController) {
 // --- Mitarbeiter:innen (NUR Admin) -------------------------------------------
 //     Auth::requireAdmin() sendet 401 (nicht angemeldet) bzw. 403 (kein Admin).
 $mitarbeiterController = new MitarbeiterController();
+// Auswahlliste der aktiven Mitarbeiter:innen – für ALLE Angemeldeten (Zuweisung
+// am Auftrag), daher NUR requireLogin (nicht requireAdmin).
+$router->get('/mitarbeiter/auswahl', function () use ($mitarbeiterController) {
+    Auth::requireLogin();
+    $mitarbeiterController->auswahl();
+});
 $router->get('/mitarbeiter',         function () use ($mitarbeiterController) {
     Auth::requireAdmin();
     $mitarbeiterController->index();
@@ -111,6 +124,34 @@ $router->put('/mitarbeiter/{id}',    function ($params) use ($mitarbeiterControl
 $router->delete('/mitarbeiter/{id}', function ($params) use ($mitarbeiterController) {
     Auth::requireAdmin();
     $mitarbeiterController->delete($params);
+});
+
+// --- Aufträge (für alle Angemeldeten; alle sehen alle Aufträge) --------------
+$auftragController = new AuftragController();
+$router->get('/auftraege',            function () use ($auftragController) {
+    Auth::requireLogin();
+    $auftragController->index();
+});
+$router->get('/auftraege/{id}',       function ($params) use ($auftragController) {
+    Auth::requireLogin();
+    $auftragController->show($params);
+});
+$router->post('/auftraege',           function () use ($auftragController) {
+    Auth::requireLogin();
+    $auftragController->create();
+});
+$router->put('/auftraege/{id}',       function ($params) use ($auftragController) {
+    Auth::requireLogin();
+    $auftragController->update($params);
+});
+// Eigener Endpunkt: Statuswechsel (Status + Verlaufszeile in EINER Transaktion).
+$router->put('/auftraege/{id}/status', function ($params) use ($auftragController) {
+    Auth::requireLogin();
+    $auftragController->updateStatus($params);
+});
+$router->delete('/auftraege/{id}',    function ($params) use ($auftragController) {
+    Auth::requireLogin();
+    $auftragController->delete($params);
 });
 
 // --- 4) Anfrage abarbeiten; Fehler einheitlich als JSON ausgeben --------------

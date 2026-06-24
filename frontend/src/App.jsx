@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate, NavLink } from "react-router-dom";
 import KundenPage from "./pages/KundenPage.jsx";
+import AuftraegePage from "./pages/AuftraegePage.jsx";
 import MitarbeiterPage from "./pages/MitarbeiterPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import { useAuth } from "./auth.jsx";
@@ -26,6 +27,7 @@ export default function App() {
         <h1>ServiceManager</h1>
         <nav>
           <NavLink to="/kunden">Kund:innen</NavLink>
+          <NavLink to="/auftraege">Aufträge</NavLink>
           {/* Mitarbeiter-Verwaltung ist nur für Admins sichtbar. */}
           {isAdmin && <NavLink to="/mitarbeiter">Mitarbeiter:innen</NavLink>}
         </nav>
@@ -47,6 +49,7 @@ export default function App() {
           {/* Startseite leitet auf die Kundenliste weiter. */}
           <Route path="/" element={<Navigate to="/kunden" replace />} />
           <Route path="/kunden" element={<KundenPage />} />
+          <Route path="/auftraege" element={<AuftraegePage />} />
           {/* Mitarbeiter-Seite nur für Admins; sonst zurück zu Kund:innen. */}
           <Route
             path="/mitarbeiter"

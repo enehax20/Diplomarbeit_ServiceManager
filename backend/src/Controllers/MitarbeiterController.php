@@ -31,6 +31,27 @@ class MitarbeiterController
         Response::json($stmt->fetchAll(), 200);
     }
 
+    /**
+     * GET /mitarbeiter/auswahl – schlanke Liste der AKTIVEN Mitarbeiter:innen
+     * (nur ID + Name) für Auswahlfelder, z. B. die Zuweisung am Auftrag.
+     *
+     * Anders als index() ist dieser Endpunkt NICHT auf Admins beschränkt:
+     * Auch normale Mitarbeiter:innen müssen beim Anlegen/Bearbeiten eines
+     * Auftrags eine:n Bearbeiter:in auswählen können. Es werden bewusst nur
+     * unkritische Felder zurückgegeben (kein Passwort, keine Rolle).
+     */
+    public function auswahl(): void
+    {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->query(
+            'SELECT mitarbeiter_id, vorname, nachname
+             FROM mitarbeiter
+             WHERE aktiv = 1
+             ORDER BY nachname, vorname'
+        );
+        Response::json($stmt->fetchAll(), 200);
+    }
+
     /** POST /mitarbeiter – legt eine:n neue:n Mitarbeiter:in an. */
     public function create(): void
     {
