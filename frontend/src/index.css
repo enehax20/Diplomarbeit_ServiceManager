@@ -32,6 +32,10 @@ body {
   font-size: 1.25rem;
   margin: 0;
 }
+.app-header nav {
+  display: flex;
+  gap: 1.25rem;
+}
 .app-header nav a {
   color: var(--primary);
   text-decoration: none;
@@ -227,12 +231,15 @@ button:disabled {
 }
 
 .row-actions {
+  /* Hinweis: KEIN display:flex auf der <td> – das bricht das Tabellen-Layout
+     und die Buttons überlappen den Text. Stattdessen normale Tabellenzelle,
+     schmal gehalten, Buttons über margin auf Abstand. */
   text-align: right;
   width: 1%;
   white-space: nowrap;
-  display: flex;
-  gap: 0.4rem;
-  justify-content: flex-end;
+}
+.row-actions button + button {
+  margin-left: 0.4rem;
 }
 .btn-edit {
   background: transparent;
