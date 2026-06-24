@@ -11,13 +11,18 @@
  *     anmelden kannst. Notiere es dir – es lässt sich später nicht erneut
  *     anzeigen (es ist nur als Hash gespeichert).
  *
- * AUFRUF (Benutzername als Parameter):
+ * AUFRUF (Benutzername als Parameter, Rolle optional):
  *   docker compose run --rm -v "${PWD}/database/scripts:/scripts" \
- *     backend php /scripts/create_admin.php <benutzername>
+ *     backend php /scripts/create_admin.php <benutzername> [rolle]
+ *
+ *   [rolle] ist 'admin' (Standard) oder 'mitarbeiter'. So lassen sich für den
+ *   Test der zwei Rollen beide Benutzertypen anlegen, z. B.:
+ *     ... create_admin.php chef            -> Rolle admin
+ *     ... create_admin.php anna mitarbeiter -> Rolle mitarbeiter
  *
  *   PowerShell (Windows): ${PWD} funktioniert genauso, z. B.
  *     docker compose run --rm -v "${PWD}/database/scripts:/scripts" `
- *       backend php /scripts/create_admin.php admin
+ *       backend php /scripts/create_admin.php chef
  *
  * Das Skript läuft im Backend-Container (hat PHP + pdo_mysql) und verbindet
  * sich im Docker-Netz zur DB über den Servicenamen "db". DB-Zugangsdaten
@@ -28,13 +33,20 @@
 
 declare(strict_types=1);
 
-// CLI-Argument prüfen ---------------------------------------------------------
+// CLI-Argumente prüfen --------------------------------------------------------
 if ($argc < 2 || trim((string) $argv[1]) === '') {
     fwrite(STDERR, "Fehler: Benutzername fehlt.\n");
-    fwrite(STDERR, "Aufruf: php create_admin.php <benutzername>\n");
+    fwrite(STDERR, "Aufruf: php create_admin.php <benutzername> [admin|mitarbeiter]\n");
     exit(1);
 }
 $benutzername = trim((string) $argv[1]);
+
+// Rolle optional (Standard: admin). Nur die beiden gültigen Werte zulassen.
+$rolle = strtolower(trim((string) ($argv[2] ?? 'admin')));
+if (!in_array($rolle, ['admin', 'mitarbeiter'], true)) {
+    fwrite(STDERR, "Fehler: Rolle muss 'admin' oder 'mitarbeiter' sein.\n");
+    exit(1);
+}
 
 // DB-Verbindungsdaten (Env mit Dev-Standardwerten aus docker-compose.yml) ------
 $dbHost = getenv('DB_HOST') ?: 'db';
@@ -75,22 +87,22 @@ try {
          VALUES (:vorname, :nachname, NULL, :benutzername, :hash, :rolle, 1)'
     );
     $insert->execute([
-        ':vorname'      => 'Admin',
+        ':vorname'      => $rolle === 'admin' ? 'Admin' : 'Mitarbeiter',
         ':nachname'     => $benutzername,
         ':benutzername' => $benutzername,
         ':hash'         => $hash,
-        ':rolle'        => 'admin',
+        ':rolle'        => $rolle,
     ]);
 
     $id = (int) $pdo->lastInsertId();
 
     // Erfolg + Zugangsdaten ausgeben (Klartext nur HIER, einmalig) ------------
     echo "\n";
-    echo "Admin-Benutzer angelegt (mitarbeiter_id = {$id}).\n";
+    echo "Benutzer angelegt (mitarbeiter_id = {$id}).\n";
     echo "------------------------------------------------------------\n";
     echo "  Benutzername : {$benutzername}\n";
     echo "  Passwort     : {$klartext}\n";
-    echo "  Rolle        : admin\n";
+    echo "  Rolle        : {$rolle}\n";
     echo "------------------------------------------------------------\n";
     echo "Bitte das Passwort notieren – es wird nur als Hash gespeichert\n";
     echo "und kann nicht erneut angezeigt werden.\n\n";

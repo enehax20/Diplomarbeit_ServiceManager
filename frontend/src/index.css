@@ -25,7 +25,7 @@ body {
   border-bottom: 1px solid var(--border);
   padding: 1rem 1.5rem;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 1.5rem;
 }
 .app-header h1 {
@@ -39,6 +39,84 @@ body {
 }
 .app-header nav a.active {
   text-decoration: underline;
+}
+
+/* Angemeldete Person + Rolle + Abmelden ganz rechts in der Kopfzeile. */
+.user-box {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.user-name {
+  font-size: 0.9rem;
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.role-badge {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  color: #fff;
+}
+.role-admin {
+  background: var(--primary);
+}
+.role-mitarbeiter {
+  background: var(--muted);
+}
+.btn-logout {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+}
+.btn-logout:hover {
+  background: var(--bg);
+}
+
+.app-loading {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  color: var(--muted);
+}
+
+/* Anmeldeseite: zentrierte Karte. */
+.login-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.login-card {
+  width: 100%;
+  max-width: 360px;
+}
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.login-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.login-form input {
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  color: var(--text);
 }
 
 .app-main {
@@ -83,6 +161,19 @@ body {
   grid-column: 1 / -1;
   display: flex;
   justify-content: flex-end;
+  gap: 0.75rem;
+}
+.form-error {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.btn-secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover {
+  background: var(--bg);
 }
 
 button {
@@ -126,6 +217,19 @@ button:disabled {
   text-align: right;
   width: 1%;
   white-space: nowrap;
+  display: flex;
+  gap: 0.4rem;
+  justify-content: flex-end;
+}
+.btn-edit {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--border);
+  padding: 0.3rem 0.6rem;
+  font-size: 0.85rem;
+}
+.btn-edit:hover {
+  background: #e0e7ff;
 }
 .btn-delete {
   background: transparent;
@@ -136,6 +240,9 @@ button:disabled {
 }
 .btn-delete:hover {
   background: #fee2e2;
+}
+.row-editing {
+  background: #eef2ff;
 }
 
 .error {

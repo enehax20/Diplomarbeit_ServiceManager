@@ -127,7 +127,12 @@ pattern for the other entities.
 - Database: **simplified to 4 tables** (`mitarbeiter`, `kunde`, `auftrag`,
   `auftrag_status_historie`). No config/reference seed; `seed.sql` is empty.
   First admin login user is created via `database/scripts/create_admin.php`.
-- Backend: skeleton runs in Docker. `GET /kunden` and `POST /kunden` exist but
-  still reference the old `betrieb_id` column — **needs updating to the new
-  schema** (deferred; do not touch backend/frontend until asked).
-- Frontend: not built yet — the next step of the Kunde vertical slice.
+- Backend: runs in Docker, matches the 4-table schema. Endpoints: `POST /login`,
+  `POST /logout`, `GET /me` (session-based auth, roles `admin`/`mitarbeiter`),
+  and full Kunde CRUD `GET/POST /kunden`, `PUT /kunden/{id}`, `DELETE /kunden/{id}`
+  (all Kunde routes require login). Auth helper: `src/Auth.php`.
+- Frontend: login gate + header (user + role badge + logout) and Kunden page with
+  create / **edit** / delete. Auth state in `src/auth.jsx`, login in
+  `src/pages/LoginPage.jsx`. Uses `fetch` with `credentials: 'include'`.
+- Open next: Auftrag + status flow (M5); Mitarbeiter management is admin-only and
+  not built yet (role guard `Auth::requireAdmin()` is ready for it).

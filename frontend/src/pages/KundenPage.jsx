@@ -15,6 +15,7 @@ const EMPTY_FORM = {
 export default function KundenPage() {
   const [kunden, setKunden] = useState([]); // Liste der Kund:innen
   const [form, setForm] = useState(EMPTY_FORM); // aktuelle Formularwerte
+  const [editId, setEditId] = useState(null); // null = anlegen, sonst bearbeiten
   const [loading, setLoading] = useState(true); // Liste wird geladen
   const [saving, setSaving] = useState(false); // Formular wird gesendet
   const [error, setError] = useState(null); // Fehlermeldung (Laden/Speichern)
@@ -43,16 +44,48 @@ export default function KundenPage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   }
 
-  // Formular absenden -> neue Kund:in anlegen.
+  // Eine Zeile zum Bearbeiten ins Formular laden.
+  function startEdit(kunde) {
+    setEditId(kunde.kunde_id);
+    setForm({
+      vorname: kunde.vorname ?? "",
+      nachname: kunde.nachname ?? "",
+      telefon: kunde.telefon ?? "",
+      email: kunde.email ?? "",
+      strasse: kunde.strasse ?? "",
+      plz: kunde.plz ?? "",
+      ort: kunde.ort ?? "",
+    });
+    setError(null);
+    // Nach oben zum Formular scrollen (das Formular steht über der Liste).
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  // Bearbeitung abbrechen -> zurück zum Anlegen-Modus.
+  function cancelEdit() {
+    setEditId(null);
+    setForm(EMPTY_FORM);
+    setError(null);
+  }
+
+  // Formular absenden -> je nach Modus anlegen (POST) oder bearbeiten (PUT).
   async function handleSubmit(event) {
     event.preventDefault();
     setSaving(true);
     setError(null);
     try {
-      const neu = await kundenApi.create(form);
-      // Den neuen Datensatz an die Liste anhängen (ohne komplett neu zu laden).
-      setKunden((prev) => [...prev, neu]);
-      setForm(EMPTY_FORM); // Formular zurücksetzen
+      if (editId === null) {
+        // Anlegen
+        const neu = await kundenApi.create(form);
+        setKunden((prev) => [...prev, neu]);
+      } else {
+        // Bearbeiten: den geänderten Datensatz in der Liste ersetzen.
+        const geaendert = await kundenApi.update(editId, form);
+        setKunden((prev) =>
+          prev.map((k) => (k.kunde_id === editId ? geaendert : k))
+        );
+      }
+      cancelEdit(); // Formular zurücksetzen und Modus auf "anlegen"
     } catch (e) {
       // Feld-spezifische Meldungen bevorzugt anzeigen (z. B. doppelte E-Mail/Telefon).
       const fieldMessages = e.fields ? Object.values(e.fields).join(" ") : null;
@@ -70,17 +103,20 @@ export default function KundenPage() {
     setError(null);
     try {
       await kundenApi.remove(kunde.kunde_id);
-      // Aus der Liste entfernen, ohne neu zu laden.
       setKunden((prev) => prev.filter((k) => k.kunde_id !== kunde.kunde_id));
+      // Falls gerade diese Kund:in bearbeitet wurde: Formular zurücksetzen.
+      if (editId === kunde.kunde_id) cancelEdit();
     } catch (e) {
       setError(e.message);
     }
   }
 
+  const editing = editId !== null;
+
   return (
     <div className="kunden-page">
       <section className="card">
-        <h2>Neue:r Kund:in</h2>
+        <h2>{editing ? "Kund:in bearbeiten" : "Neue:r Kund:in"}</h2>
         <form onSubmit={handleSubmit} className="form-grid">
           <label>
             Vorname *
@@ -111,9 +147,20 @@ export default function KundenPage() {
             <input name="ort" value={form.ort} onChange={handleChange} />
           </label>
 
+          {editing && error && <p className="error form-error">{error}</p>}
+
           <div className="form-actions">
+            {editing && (
+              <button type="button" className="btn-secondary" onClick={cancelEdit}>
+                Abbrechen
+              </button>
+            )}
             <button type="submit" disabled={saving}>
-              {saving ? "Speichern …" : "Kund:in anlegen"}
+              {saving
+                ? "Speichern …"
+                : editing
+                ? "Änderungen speichern"
+                : "Kund:in anlegen"}
             </button>
           </div>
         </form>
@@ -122,7 +169,7 @@ export default function KundenPage() {
       <section className="card">
         <h2>Kund:innen ({kunden.length})</h2>
 
-        {error && <p className="error">{error}</p>}
+        {!editing && error && <p className="error">{error}</p>}
 
         {loading ? (
           <p>Wird geladen …</p>
@@ -141,7 +188,7 @@ export default function KundenPage() {
             </thead>
             <tbody>
               {kunden.map((k) => (
-                <tr key={k.kunde_id}>
+                <tr key={k.kunde_id} className={k.kunde_id === editId ? "row-editing" : ""}>
                   <td>
                     {k.nachname}, {k.vorname}
                   </td>
@@ -149,6 +196,13 @@ export default function KundenPage() {
                   <td>{k.email || "—"}</td>
                   <td>{k.ort || "—"}</td>
                   <td className="row-actions">
+                    <button
+                      type="button"
+                      className="btn-edit"
+                      onClick={() => startEdit(k)}
+                    >
+                      Bearbeiten
+                    </button>
                     <button
                       type="button"
                       className="btn-delete"
