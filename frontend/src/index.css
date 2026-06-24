@@ -163,17 +163,6 @@ body {
   color: var(--text);
   background: #fff;
 }
-/* Checkbox-Zeile: Häkchen neben dem Text statt darüber. */
-.form-grid .checkbox-label {
-  flex-direction: row;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--text);
-  font-size: 0.95rem;
-}
-.form-grid .checkbox-label input {
-  width: auto;
-}
 .form-actions {
   grid-column: 1 / -1;
   display: flex;

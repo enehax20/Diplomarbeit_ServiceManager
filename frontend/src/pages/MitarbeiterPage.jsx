@@ -150,15 +150,12 @@ export default function MitarbeiterPage() {
               minLength={8}
             />
           </label>
-          <label className="checkbox-label">
-            <input
-              name="aktiv"
-              type="checkbox"
-              checked={form.aktiv}
-              onChange={handleChange}
-            />
-            aktiv (Anmeldung erlaubt)
-          </label>
+
+          {/* Hinweis: "aktiv" wird bewusst NICHT im Formular angeboten – neue
+              Mitarbeiter:innen sind automatisch aktiv und können sich selbst
+              anmelden. Das Feld bleibt in der DB (Standard: aktiv) und im
+              Formularzustand erhalten, damit ein späteres Deaktivieren möglich
+              bliebe, ohne bestehende Werte zu überschreiben. */}
 
           {editing && error && <p className="error form-error">{error}</p>}
 
