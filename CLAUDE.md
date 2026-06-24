@@ -151,9 +151,10 @@ pattern for the other entities.
   in `src/auth.jsx`, login in `src/pages/LoginPage.jsx`. Uses `fetch` with
   `credentials: 'include'`. Status labels/values live in `src/api.js`
   (`AUFTRAG_STATUS`, `statusLabel`).
-- Demo data: `database/scripts/seed_demo_data.php` generates realistic Austrian
-  Kunden (default 250), several demo Mitarbeiter (shared password `demo1234`),
-  and demo Aufträge with a consistent status history. Reproducible, idempotent-ish
-  (unique email/phone per run; collisions skipped). Run:
-  `docker compose run --rm -v "${PWD}/database/scripts:/scripts" backend php /scripts/seed_demo_data.php [kunden] [auftraege]`.
+- Test data: bulk Kunden (≥200) are generated **externally with Mockaroo** and
+  imported once via phpMyAdmin (Import tab) into the `kunde` table — NOT via a
+  seed script and NOT committed to the repo. `kunde_id` is auto-increment (omit
+  it on import); `email` and `telefon` are UNIQUE (make them unique in Mockaroo,
+  e.g. by appending the row number). Aufträge are created through the app itself.
+  Do not re-introduce an automatic seed/generator script.
 - Open next: M6 polish (login hardening / validation review) and M7 documentation.
