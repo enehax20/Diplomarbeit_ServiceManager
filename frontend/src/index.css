@@ -150,12 +150,25 @@ body {
   font-size: 0.85rem;
   color: var(--muted);
 }
-.form-grid input {
+.form-grid input,
+.form-grid select {
   padding: 0.5rem 0.6rem;
   border: 1px solid var(--border);
   border-radius: 6px;
   font-size: 0.95rem;
   color: var(--text);
+  background: #fff;
+}
+/* Checkbox-Zeile: Häkchen neben dem Text statt darüber. */
+.form-grid .checkbox-label {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+.form-grid .checkbox-label input {
+  width: auto;
 }
 .form-actions {
   grid-column: 1 / -1;

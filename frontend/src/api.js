@@ -54,3 +54,17 @@ export const kundenApi = {
   // DELETE /kunden/{id} -> löscht eine Kund:in
   remove: (id) => request(`/kunden/${id}`, { method: "DELETE" }),
 };
+
+// Mitarbeiter:innen (nur für Admins erreichbar).
+export const mitarbeiterApi = {
+  // GET /mitarbeiter -> Liste aller Mitarbeiter:innen (ohne Passwort)
+  list: () => request("/mitarbeiter"),
+  // POST /mitarbeiter -> neue:n Mitarbeiter:in anlegen (Admin tippt das Passwort)
+  create: (mitarbeiter) =>
+    request("/mitarbeiter", { method: "POST", body: JSON.stringify(mitarbeiter) }),
+  // PUT /mitarbeiter/{id} -> bearbeiten (Passwort optional: leer = unverändert)
+  update: (id, mitarbeiter) =>
+    request(`/mitarbeiter/${id}`, { method: "PUT", body: JSON.stringify(mitarbeiter) }),
+  // DELETE /mitarbeiter/{id} -> löscht eine:n Mitarbeiter:in
+  remove: (id) => request(`/mitarbeiter/${id}`, { method: "DELETE" }),
+};

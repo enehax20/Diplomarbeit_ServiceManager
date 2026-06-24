@@ -131,8 +131,13 @@ pattern for the other entities.
   `POST /logout`, `GET /me` (session-based auth, roles `admin`/`mitarbeiter`),
   and full Kunde CRUD `GET/POST /kunden`, `PUT /kunden/{id}`, `DELETE /kunden/{id}`
   (all Kunde routes require login). Auth helper: `src/Auth.php`.
-- Frontend: login gate + header (user + role badge + logout) and Kunden page with
-  create / **edit** / delete. Auth state in `src/auth.jsx`, login in
-  `src/pages/LoginPage.jsx`. Uses `fetch` with `credentials: 'include'`.
-- Open next: Auftrag + status flow (M5); Mitarbeiter management is admin-only and
-  not built yet (role guard `Auth::requireAdmin()` is ready for it).
+  Admin-only Mitarbeiter management: `GET/POST /mitarbeiter`, `PUT /mitarbeiter/{id}`,
+  `DELETE /mitarbeiter/{id}` (behind `Auth::requireAdmin()`; admin types the password;
+  hard delete allowed but blocked by FK RESTRICT once orders exist → deactivate via
+  `aktiv` instead; self-delete/​self-deactivate/​self-demote blocked). The created
+  Mitarbeiter then logs in themselves with their own credentials.
+- Frontend: login gate + header (user + role badge + logout). Kunden page with
+  create / **edit** / delete; admin-only Mitarbeiter page (create/edit, typed
+  password). Auth state in `src/auth.jsx`, login in `src/pages/LoginPage.jsx`.
+  Uses `fetch` with `credentials: 'include'`.
+- Open next: Auftrag + status flow (M5).

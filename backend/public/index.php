@@ -13,6 +13,7 @@ use App\Response;
 use App\Router;
 use App\Controllers\AuthController;
 use App\Controllers\KundeController;
+use App\Controllers\MitarbeiterController;
 
 // --- 1) Autoloader: lädt Klassen automatisch aus dem src/-Verzeichnis ---------
 //     Begründung: spart manuelle require-Aufrufe. Konvention: die Klasse
@@ -61,6 +62,7 @@ $router->get('/', function (): void {
         'endpoints' => [
             'POST /login', 'POST /logout', 'GET /me',
             'GET /kunden', 'POST /kunden', 'PUT /kunden/{id}', 'DELETE /kunden/{id}',
+            'GET /mitarbeiter', 'POST /mitarbeiter', 'PUT /mitarbeiter/{id}', 'DELETE /mitarbeiter/{id}',
         ],
     ]);
 });
@@ -89,6 +91,26 @@ $router->put('/kunden/{id}',    function ($params) use ($kundeController) {
 $router->delete('/kunden/{id}', function ($params) use ($kundeController) {
     Auth::requireLogin();
     $kundeController->delete($params);
+});
+
+// --- Mitarbeiter:innen (NUR Admin) -------------------------------------------
+//     Auth::requireAdmin() sendet 401 (nicht angemeldet) bzw. 403 (kein Admin).
+$mitarbeiterController = new MitarbeiterController();
+$router->get('/mitarbeiter',         function () use ($mitarbeiterController) {
+    Auth::requireAdmin();
+    $mitarbeiterController->index();
+});
+$router->post('/mitarbeiter',        function () use ($mitarbeiterController) {
+    Auth::requireAdmin();
+    $mitarbeiterController->create();
+});
+$router->put('/mitarbeiter/{id}',    function ($params) use ($mitarbeiterController) {
+    Auth::requireAdmin();
+    $mitarbeiterController->update($params);
+});
+$router->delete('/mitarbeiter/{id}', function ($params) use ($mitarbeiterController) {
+    Auth::requireAdmin();
+    $mitarbeiterController->delete($params);
 });
 
 // --- 4) Anfrage abarbeiten; Fehler einheitlich als JSON ausgeben --------------

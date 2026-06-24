@@ -62,7 +62,11 @@ never drift apart. The history table is the source of truth for the
   non-NULL email or phone (DB constraint + backend pre-check returning a 422
   field error). Empty/NULL may repeat. `(vorname, nachname)` is deliberately
   **not** unique — same-named people are different customers.
-- **Never hard-delete a Mitarbeiter** → set `aktiv = 0` (keeps history consistent).
+- **Mitarbeiter delete:** admins may hard-delete a Mitarbeiter. The FK
+  `auftrag.mitarbeiter_id` is `ON DELETE RESTRICT`, so deletion is blocked (DB
+  error 23000 → 409) once orders are assigned; in that case **deactivate**
+  (`aktiv = 0`) instead. `auftrag_status_historie.geaendert_von` is `SET NULL`,
+  so past status entries survive but lose the author attribution.
 - Deleting a Kunde is allowed only if no Auftrag links to it; the DB blocks it
   otherwise (RESTRICT) → catch that and show a clear German message.
 - Passwords go through `password_hash` / `password_verify` into

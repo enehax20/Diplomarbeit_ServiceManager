@@ -1,12 +1,13 @@
 import { Routes, Route, Navigate, NavLink } from "react-router-dom";
 import KundenPage from "./pages/KundenPage.jsx";
+import MitarbeiterPage from "./pages/MitarbeiterPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import { useAuth } from "./auth.jsx";
 
 // Grundgerüst der App. Zeigt je nach Anmelde-Zustand entweder die
 // Anmeldeseite oder den geschützten Bereich (Kopfzeile + Routen).
 export default function App() {
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout, isAdmin } = useAuth();
 
   // Solange die erste Session-Prüfung (GET /me) läuft: kurzer Hinweis.
   if (loading) {
@@ -25,6 +26,8 @@ export default function App() {
         <h1>ServiceManager</h1>
         <nav>
           <NavLink to="/kunden">Kund:innen</NavLink>
+          {/* Mitarbeiter-Verwaltung ist nur für Admins sichtbar. */}
+          {isAdmin && <NavLink to="/mitarbeiter">Mitarbeiter:innen</NavLink>}
         </nav>
 
         {/* Angemeldete Person + Rolle anzeigen (zwei Rollen: admin/mitarbeiter). */}
@@ -44,6 +47,11 @@ export default function App() {
           {/* Startseite leitet auf die Kundenliste weiter. */}
           <Route path="/" element={<Navigate to="/kunden" replace />} />
           <Route path="/kunden" element={<KundenPage />} />
+          {/* Mitarbeiter-Seite nur für Admins; sonst zurück zu Kund:innen. */}
+          <Route
+            path="/mitarbeiter"
+            element={isAdmin ? <MitarbeiterPage /> : <Navigate to="/kunden" replace />}
+          />
         </Routes>
       </main>
     </div>
