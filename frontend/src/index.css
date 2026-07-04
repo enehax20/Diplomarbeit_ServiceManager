@@ -364,6 +364,32 @@ button:disabled {
 .detail-box p {
   margin: 0.25rem 0;
 }
+
+/* Kleine Feldübersicht (Titel, Hersteller, Daten …) im aufgeklappten Bereich. */
+.detail-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.4rem 1rem;
+  margin: 0 0 0.75rem;
+}
+.detail-fields div {
+  display: flex;
+  flex-direction: column;
+}
+.detail-fields dt {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.detail-fields dd {
+  margin: 0;
+  font-size: 0.9rem;
+}
+/* Hinweis "früher/später als geplant". */
+.fertig-hinweis {
+  color: var(--text);
+}
 .historie {
   list-style: none;
   padding: 0;

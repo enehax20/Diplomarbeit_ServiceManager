@@ -26,6 +26,21 @@ function nurDatum(wert) {
   return String(wert).slice(0, 10);
 }
 
+// Vergleicht das GEPLANTE Fertigstellungsdatum (voraussichtlich_fertig, ein DATE)
+// mit dem TATSÄCHLICHEN Abschlusszeitpunkt (abgeschlossen_am, ein DATETIME) und
+// gibt einen verständlichen deutschen Text zurück – oder null, wenn ein Wert fehlt.
+// Positiv = später als geplant, negativ = früher, 0 = genau am geplanten Tag.
+function fertigstellungText(plan, abgeschlossen) {
+  if (!plan || !abgeschlossen) return null;
+  // Beide auf den reinen Tag reduzieren (ohne Uhrzeit), dann Tage berechnen.
+  const planTag = new Date(String(plan).slice(0, 10) + "T00:00:00");
+  const istTag = new Date(String(abgeschlossen).slice(0, 10) + "T00:00:00");
+  const tage = Math.round((istTag - planTag) / 86400000); // ms pro Tag
+  if (tage > 0) return `${tage} Tag(e) später als geplant`;
+  if (tage < 0) return `${-tage} Tag(e) früher als geplant`;
+  return "pünktlich (genau am geplanten Tag)";
+}
+
 const PER_PAGE = 10; // Aufträge pro Seite
 
 export default function AuftraegePage() {
@@ -383,6 +398,32 @@ export default function AuftraegePage() {
                     <tr className="detail-row">
                       <td colSpan={7}>
                         <div className="detail-box">
+                          {/* Stammdaten des Auftrags, die in der Tabelle keinen Platz haben. */}
+                          <dl className="detail-fields">
+                            <div>
+                              <dt>Titel</dt>
+                              <dd>{detail.titel || "—"}</dd>
+                            </div>
+                            <div>
+                              <dt>Hersteller</dt>
+                              <dd>{detail.hersteller || "—"}</dd>
+                            </div>
+                            <div>
+                              <dt>Angenommen am</dt>
+                              <dd>{nurDatum(detail.angenommen_am)}</dd>
+                            </div>
+                            <div>
+                              <dt>Voraussichtlich fertig</dt>
+                              <dd>{nurDatum(detail.voraussichtlich_fertig)}</dd>
+                            </div>
+                            {detail.abgeschlossen_am && (
+                              <div>
+                                <dt>Tatsächlich fertig</dt>
+                                <dd>{nurDatum(detail.abgeschlossen_am)}</dd>
+                              </div>
+                            )}
+                          </dl>
+
                           <p>
                             <strong>Problem:</strong> {detail.problembeschreibung}
                           </p>
@@ -391,6 +432,16 @@ export default function AuftraegePage() {
                               <strong>Diagnose:</strong> {detail.diagnose}
                             </p>
                           )}
+
+                          {/* Vergleich geplant vs. tatsächlich – nur wenn der Auftrag
+                              abgeschlossen ist (FERTIG/ABGEHOLT) und ein Plandatum hat. */}
+                          {fertigstellungText(detail.voraussichtlich_fertig, detail.abgeschlossen_am) && (
+                            <p className="fertig-hinweis">
+                              <strong>Fertigstellung:</strong>{" "}
+                              {fertigstellungText(detail.voraussichtlich_fertig, detail.abgeschlossen_am)}
+                            </p>
+                          )}
+
                           <strong>Statusverlauf</strong>
                           <ul className="historie">
                             {detail.historie.map((h) => (
