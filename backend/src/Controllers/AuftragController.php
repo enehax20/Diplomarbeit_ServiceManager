@@ -59,17 +59,25 @@ class AuftragController
         $where  = '';
         $params = [];
         if ($q !== '') {
+            // Suche über Gegenstand/Hersteller/Titel, Kund:in-Name UND Bearbeiter:in-Name.
             $where = 'WHERE a.servicegegenstand LIKE :q1 OR a.hersteller LIKE :q2
-                         OR a.titel LIKE :q3 OR k.vorname LIKE :q4 OR k.nachname LIKE :q5';
+                         OR a.titel LIKE :q3 OR k.vorname LIKE :q4 OR k.nachname LIKE :q5
+                         OR m.vorname LIKE :q6 OR m.nachname LIKE :q7';
             $like = '%' . $q . '%';
-            $params = [':q1' => $like, ':q2' => $like, ':q3' => $like, ':q4' => $like, ':q5' => $like];
+            $params = [
+                ':q1' => $like, ':q2' => $like, ':q3' => $like, ':q4' => $like,
+                ':q5' => $like, ':q6' => $like, ':q7' => $like,
+            ];
         }
 
-        // --- Gesamtzahl (mit JOIN, da die Suche auch den Kund:in-Namen einschließt) ---
+        // --- Gesamtzahl -------------------------------------------------------
+        // Beide JOINs, weil die Suche Kund:in- UND Bearbeiter:in-Name einschließt
+        // (mitarbeiter per LEFT JOIN, da ein Auftrag noch unzugewiesen sein kann).
         $countStmt = $pdo->prepare(
             "SELECT COUNT(*)
              FROM auftrag a
-             JOIN kunde k ON a.kunde_id = k.kunde_id
+             JOIN kunde k            ON a.kunde_id = k.kunde_id
+             LEFT JOIN mitarbeiter m ON a.mitarbeiter_id = m.mitarbeiter_id
              $where"
         );
         $countStmt->execute($params);

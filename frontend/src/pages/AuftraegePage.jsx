@@ -309,7 +309,7 @@ export default function AuftraegePage() {
           <input
             className="search-input"
             type="search"
-            placeholder="Suchen (Gegenstand, Hersteller, Kund:in) …"
+            placeholder="Suchen (Gegenstand, Hersteller, Kund:in, Bearbeiter:in) …"
             value={query}
             onChange={handleSearch}
           />
@@ -427,11 +427,10 @@ export default function AuftraegePage() {
                           <p>
                             <strong>Problem:</strong> {detail.problembeschreibung}
                           </p>
-                          {detail.diagnose && (
-                            <p>
-                              <strong>Diagnose:</strong> {detail.diagnose}
-                            </p>
-                          )}
+                          <p>
+                            <strong>Diagnose:</strong>{" "}
+                            {detail.diagnose || <span className="muted">noch keine Diagnose</span>}
+                          </p>
 
                           {/* Vergleich geplant vs. tatsächlich – nur wenn der Auftrag
                               abgeschlossen ist (FERTIG/ABGEHOLT) und ein Plandatum hat. */}
