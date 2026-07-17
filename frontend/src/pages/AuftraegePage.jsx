@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   auftraegeApi,
   kundenApi,
@@ -24,6 +25,16 @@ const EMPTY_FORM = {
 function nurDatum(wert) {
   if (!wert) return "—";
   return String(wert).slice(0, 10);
+}
+
+// Heutiges Datum als "JJJJ-MM-TT" (lokale Zeitzone). Dient als min-Wert für das
+// Datumsfeld, damit im Kalender keine vergangenen Tage wählbar sind. Die echte
+// Prüfung macht zusätzlich das Backend (siehe AuftragController).
+function heuteIso() {
+  const d = new Date();
+  const monat = String(d.getMonth() + 1).padStart(2, "0");
+  const tag = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${monat}-${tag}`;
 }
 
 // Vergleicht das GEPLANTE Fertigstellungsdatum (voraussichtlich_fertig, ein DATE)
@@ -54,11 +65,28 @@ export default function AuftraegePage() {
   const [error, setError] = useState(null);
   const [detail, setDetail] = useState(null); // aufgeklappter Auftrag (inkl. Verlauf)
 
-  // Pagination + Suche (serverseitig: das Backend liefert nur eine Seite).
-  const [page, setPage] = useState(1); // aktuelle Seite (1-basiert)
+  // Gesamtzahl + Seitenanzahl kommen aus der Backend-Antwort.
   const [total, setTotal] = useState(0); // Gesamtzahl der Treffer
   const [totalPages, setTotalPages] = useState(1); // Anzahl Seiten
-  const [query, setQuery] = useState(""); // Suchbegriff (Gegenstand/Kund:in …)
+
+  // Aktuelle Seite und Suchbegriff stehen in der URL (?page=2&q=…), damit die
+  // Adresse den Listenzustand widerspiegelt: teilbar, als Lesezeichen speicherbar
+  // und über die Zurück-Taste erreichbar. (GET-Prinzip: alles steht in der URL.)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const page = Math.max(1, Number(searchParams.get("page")) || 1);
+  const query = searchParams.get("q") ?? "";
+
+  // Schreibt Seite/Suche in die URL. Standardwerte (Seite 1, leere Suche) lassen
+  // wir weg, damit die URL sauber bleibt. replace=true beim Tippen, damit die
+  // Zurück-Taste nicht bei jedem Buchstaben einen Eintrag anlegt.
+  function updateParams(next, { replace = false } = {}) {
+    const p = next.page ?? page;
+    const q = next.q ?? query;
+    const params = {};
+    if (p > 1) params.page = String(p);
+    if (q) params.q = q;
+    setSearchParams(params, { replace });
+  }
 
   // Auswahllisten (Kund:innen, Mitarbeiter:innen) einmalig beim Start laden.
   useEffect(() => {
@@ -89,8 +117,8 @@ export default function AuftraegePage() {
       setTotal(res.total);
       setTotalPages(res.totalPages);
       // Falls das Backend die Seite begrenzt hat (z. B. nach dem Löschen des
-      // letzten Eintrags einer Seite), unseren Zustand angleichen.
-      if (res.page !== page) setPage(res.page);
+      // letzten Eintrags einer Seite), die URL angleichen.
+      if (res.page !== page) updateParams({ page: res.page }, { replace: true });
     } catch (e) {
       setError(e.message);
     } finally {
@@ -98,10 +126,9 @@ export default function AuftraegePage() {
     }
   }
 
-  // Suchfeld: bei jeder Änderung zurück auf Seite 1.
+  // Suchfeld: bei jeder Änderung zurück auf Seite 1 und den Begriff in die URL.
   function handleSearch(event) {
-    setQuery(event.target.value);
-    setPage(1);
+    updateParams({ page: 1, q: event.target.value }, { replace: true });
   }
 
   function handleChange(event) {
@@ -258,6 +285,7 @@ export default function AuftraegePage() {
             <input
               name="voraussichtlich_fertig"
               type="date"
+              min={heuteIso()}
               value={form.voraussichtlich_fertig}
               onChange={handleChange}
             />
@@ -475,7 +503,7 @@ export default function AuftraegePage() {
             <button
               type="button"
               className="btn-secondary"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              onClick={() => updateParams({ page: Math.max(1, page - 1) })}
               disabled={page <= 1}
             >
               ← Zurück
@@ -486,7 +514,7 @@ export default function AuftraegePage() {
             <button
               type="button"
               className="btn-secondary"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              onClick={() => updateParams({ page: Math.min(totalPages, page + 1) })}
               disabled={page >= totalPages}
             >
               Weiter →

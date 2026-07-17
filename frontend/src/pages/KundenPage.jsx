@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { kundenApi } from "../api.js";
 
 // Leeres Formular als Ausgangszustand (ein Feld je Spalte der Tabelle "kunde").
@@ -22,11 +23,28 @@ export default function KundenPage() {
   const [saving, setSaving] = useState(false); // Formular wird gesendet
   const [error, setError] = useState(null); // Fehlermeldung (Laden/Speichern)
 
-  // Pagination + Suche (serverseitig: das Backend liefert nur eine Seite).
-  const [page, setPage] = useState(1); // aktuelle Seite (1-basiert)
+  // Gesamtzahl + Seitenanzahl kommen aus der Backend-Antwort.
   const [total, setTotal] = useState(0); // Gesamtzahl der Treffer
   const [totalPages, setTotalPages] = useState(1); // Anzahl Seiten
-  const [query, setQuery] = useState(""); // Suchbegriff (Name/E-Mail)
+
+  // Aktuelle Seite und Suchbegriff stehen in der URL (?page=2&q=…), damit die
+  // Adresse den Listenzustand widerspiegelt: teilbar, als Lesezeichen speicherbar
+  // und über die Zurück-Taste erreichbar. (GET-Prinzip: alles steht in der URL.)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const page = Math.max(1, Number(searchParams.get("page")) || 1);
+  const query = searchParams.get("q") ?? "";
+
+  // Schreibt Seite/Suche in die URL. Standardwerte (Seite 1, leere Suche) lassen
+  // wir weg, damit die URL sauber bleibt. replace=true beim Tippen, damit die
+  // Zurück-Taste nicht bei jedem Buchstaben einen Eintrag anlegt.
+  function updateParams(next, { replace = false } = {}) {
+    const p = next.page ?? page;
+    const q = next.q ?? query;
+    const params = {};
+    if (p > 1) params.page = String(p);
+    if (q) params.q = q;
+    setSearchParams(params, { replace });
+  }
 
   // Liste laden, sobald sich Seite oder Suchbegriff ändert.
   // Kleiner Timer (Debounce): beim Tippen nicht bei jedem Tastendruck laden.
@@ -48,8 +66,8 @@ export default function KundenPage() {
       setTotal(res.total);
       setTotalPages(res.totalPages);
       // Falls das Backend die Seite begrenzt hat (z. B. nach dem Löschen des
-      // letzten Eintrags einer Seite), unseren Zustand angleichen.
-      if (res.page !== page) setPage(res.page);
+      // letzten Eintrags einer Seite), die URL angleichen.
+      if (res.page !== page) updateParams({ page: res.page }, { replace: true });
     } catch (e) {
       setError(e.message);
     } finally {
@@ -63,10 +81,9 @@ export default function KundenPage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   }
 
-  // Suchfeld: bei jeder Änderung zurück auf Seite 1.
+  // Suchfeld: bei jeder Änderung zurück auf Seite 1 und den Begriff in die URL.
   function handleSearch(event) {
-    setQuery(event.target.value);
-    setPage(1);
+    updateParams({ page: 1, q: event.target.value }, { replace: true });
   }
 
   // Eine Zeile zum Bearbeiten ins Formular laden.
@@ -254,7 +271,7 @@ export default function KundenPage() {
               <button
                 type="button"
                 className="btn-secondary"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={() => updateParams({ page: Math.max(1, page - 1) })}
                 disabled={page <= 1}
               >
                 ← Zurück
@@ -265,7 +282,7 @@ export default function KundenPage() {
               <button
                 type="button"
                 className="btn-secondary"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() => updateParams({ page: Math.min(totalPages, page + 1) })}
                 disabled={page >= totalPages}
               >
                 Weiter →

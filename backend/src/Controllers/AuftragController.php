@@ -376,9 +376,18 @@ class AuftragController
         if ($data['titel'] !== '' && mb_strlen($data['titel']) > 150) {
             $errors['titel'] = 'Der Titel ist zu lang (max. 150 Zeichen).';
         }
-        // Datum (optional) muss, wenn gesetzt, das Format JJJJ-MM-TT haben.
-        if ($data['voraussichtlich_fertig'] !== '' && !$this->isValidDate($data['voraussichtlich_fertig'])) {
-            $errors['voraussichtlich_fertig'] = 'Bitte ein gültiges Datum angeben.';
+        // Datum (optional): wenn gesetzt, muss es das Format JJJJ-MM-TT haben UND
+        // darf nicht in der Vergangenheit liegen. Ein geplanter Fertigstellungs-
+        // termin, der schon vorbei ist, ergibt fachlich keinen Sinn.
+        if ($data['voraussichtlich_fertig'] !== '') {
+            $datum = \DateTime::createFromFormat('Y-m-d', $data['voraussichtlich_fertig']);
+            $formatOk = $datum !== false && $datum->format('Y-m-d') === $data['voraussichtlich_fertig'];
+            if (!$formatOk) {
+                $errors['voraussichtlich_fertig'] = 'Bitte ein gültiges Datum angeben.';
+            } elseif ($datum < new \DateTime('today')) {
+                // 'today' = heute um Mitternacht; das heutige Datum ist noch erlaubt.
+                $errors['voraussichtlich_fertig'] = 'Das Datum darf nicht in der Vergangenheit liegen.';
+            }
         }
 
         if ($errors) {
@@ -394,13 +403,6 @@ class AuftragController
         $data['voraussichtlich_fertig'] = $data['voraussichtlich_fertig'] !== '' ? $data['voraussichtlich_fertig'] : null;
 
         return $data;
-    }
-
-    /** Prüft ein Datum im Format JJJJ-MM-TT auf Gültigkeit. */
-    private function isValidDate(string $value): bool
-    {
-        $d = \DateTime::createFromFormat('Y-m-d', $value);
-        return $d !== false && $d->format('Y-m-d') === $value;
     }
 
     /** Schreibt eine Zeile in den Statusverlauf (gemeinsam genutzt). */
