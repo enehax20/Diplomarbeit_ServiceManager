@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate, NavLink } from "react-router-dom";
+import { Routes, Route, Navigate, NavLink, Link } from "react-router-dom";
+import HomePage from "./pages/HomePage.jsx";
 import KundenPage from "./pages/KundenPage.jsx";
 import AuftraegePage from "./pages/AuftraegePage.jsx";
 import MitarbeiterPage from "./pages/MitarbeiterPage.jsx";
@@ -24,8 +25,12 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>ServiceManager</h1>
+        {/* Logo führt zurück zur Startseite (auch von jeder anderen Seite aus). */}
+        <h1>
+          <Link to="/" className="logo-link">ServiceManager</Link>
+        </h1>
         <nav>
+          <NavLink to="/" end>Start</NavLink>
           <NavLink to="/kunden">Kund:innen</NavLink>
           <NavLink to="/auftraege">Aufträge</NavLink>
           {/* Mitarbeiter-Verwaltung ist nur für Admins sichtbar. */}
@@ -46,8 +51,8 @@ export default function App() {
 
       <main className="app-main">
         <Routes>
-          {/* Startseite leitet auf die Kundenliste weiter. */}
-          <Route path="/" element={<Navigate to="/kunden" replace />} />
+          {/* Startseite (Cockpit) mit den Kennzahlen. */}
+          <Route path="/" element={<HomePage />} />
           <Route path="/kunden" element={<KundenPage />} />
           <Route path="/auftraege" element={<AuftraegePage />} />
           {/* Mitarbeiter-Seite nur für Admins; sonst zurück zu Kund:innen. */}

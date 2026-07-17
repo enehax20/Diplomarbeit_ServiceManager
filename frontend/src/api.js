@@ -106,6 +106,22 @@ export const auftraegeApi = {
   remove: (id) => request(`/auftraege/${id}`, { method: "DELETE" }),
 };
 
+// Kennzahlen für die Startseite (Cockpit).
+export const statistikApi = {
+  // GET /statistik -> { kundenGesamt, auftraegeGesamt, auftraegeOffen, topKunden }
+  get: () => request("/statistik"),
+};
+
+// Formatiert ein Datum (DATE "2026-06-24" oder DATETIME "2026-06-24 15:58:44")
+// als "TT/MM/JJJJ". Wir zerlegen nur den Datumsteil als Text – so gibt es keine
+// Zeitzonen-Verschiebung (new Date() würde den Wert als UTC interpretieren).
+export function formatDatum(wert) {
+  if (!wert) return "—";
+  const [jahr, monat, tag] = String(wert).slice(0, 10).split("-");
+  if (!jahr || !monat || !tag) return "—";
+  return `${tag}/${monat}/${jahr}`;
+}
+
 // Die fünf Status-Werte mit deutscher Beschriftung (Reihenfolge = Arbeitsfluss).
 // Werte müssen exakt dem ENUM in der Datenbank entsprechen.
 export const AUFTRAG_STATUS = [

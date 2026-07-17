@@ -32,6 +32,14 @@ body {
   font-size: 1.25rem;
   margin: 0;
 }
+/* Das Logo ist ein Link zur Startseite, soll aber wie die Überschrift aussehen. */
+.logo-link {
+  color: inherit;
+  text-decoration: none;
+}
+.logo-link:hover {
+  color: var(--primary);
+}
 .app-header nav {
   display: flex;
   gap: 1.25rem;
@@ -399,6 +407,48 @@ button:disabled {
 }
 .historie li {
   font-size: 0.9rem;
+}
+
+/* Kleines Suchfeld über dem Kund:in-Auswahlfeld im Auftragsformular. */
+.kunde-suche {
+  margin-bottom: 0.35rem;
+  font-size: 0.85rem;
+}
+
+/* Startseite (Cockpit): Abstände zwischen den Abschnitten. */
+.home-page {
+  display: grid;
+  gap: 1.5rem;
+}
+/* Kennzahlen als Kartenraster (passt sich der Breite an). */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+}
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  text-decoration: none;
+  color: inherit;
+}
+.stat-card:hover {
+  border-color: var(--primary);
+}
+.stat-zahl {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1;
+}
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--muted);
 }
 
 @media (max-width: 560px) {

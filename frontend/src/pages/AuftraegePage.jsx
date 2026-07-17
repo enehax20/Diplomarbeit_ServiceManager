@@ -6,6 +6,7 @@ import {
   mitarbeiterApi,
   AUFTRAG_STATUS,
   statusLabel,
+  formatDatum,
 } from "../api.js";
 
 // Leeres Formular. Die Felder entsprechen den Spalten der Tabelle "auftrag",
@@ -20,12 +21,6 @@ const EMPTY_FORM = {
   diagnose: "",
   voraussichtlich_fertig: "",
 };
-
-// Zeigt nur den Datumsteil eines DATETIME-Strings (z. B. "2026-06-24 15:58:44").
-function nurDatum(wert) {
-  if (!wert) return "—";
-  return String(wert).slice(0, 10);
-}
 
 // Heutiges Datum als "JJJJ-MM-TT" (lokale Zeitzone). Dient als min-Wert für das
 // Datumsfeld, damit im Kalender keine vergangenen Tage wählbar sind. Die echte
@@ -64,6 +59,7 @@ export default function AuftraegePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [detail, setDetail] = useState(null); // aufgeklappter Auftrag (inkl. Verlauf)
+  const [kundeSuche, setKundeSuche] = useState(""); // Suchtext im Kund:in-Auswahlfeld
 
   // Gesamtzahl + Seitenanzahl kommen aus der Backend-Antwort.
   const [total, setTotal] = useState(0); // Gesamtzahl der Treffer
@@ -168,6 +164,7 @@ export default function AuftraegePage() {
     setEditId(null);
     setForm(EMPTY_FORM);
     setError(null);
+    setKundeSuche("");
   }
 
   async function handleSubmit(event) {
@@ -235,6 +232,29 @@ export default function AuftraegePage() {
 
   const editing = editId !== null;
 
+  // Kund:innen-Auswahl nach dem Suchbegriff filtern (Name enthält den Text).
+  // So findet man auch bei sehr vielen Kund:innen schnell die richtige.
+  const sucheKlein = kundeSuche.trim().toLowerCase();
+  const kundenGefiltert =
+    sucheKlein === ""
+      ? kundenOpts
+      : kundenOpts.filter((k) =>
+          `${k.nachname} ${k.vorname}`.toLowerCase().includes(sucheKlein)
+        );
+
+  // Die aktuell gewählte Kund:in immer in der Liste behalten, auch wenn die
+  // Suche sie sonst ausblenden würde (sonst würde die Auswahl "verschwinden").
+  const gewaehlteKunde = kundenOpts.find(
+    (k) => String(k.kunde_id) === String(form.kunde_id)
+  );
+  const kundenAuswahl = [...kundenGefiltert];
+  if (
+    gewaehlteKunde &&
+    !kundenAuswahl.some((k) => k.kunde_id === gewaehlteKunde.kunde_id)
+  ) {
+    kundenAuswahl.unshift(gewaehlteKunde);
+  }
+
   return (
     <div className="auftraege-page">
       <section className="card">
@@ -242,9 +262,17 @@ export default function AuftraegePage() {
         <form onSubmit={handleSubmit} className="form-grid">
           <label>
             Kund:in *
+            {/* Suchfeld: filtert die Auswahlliste darunter (Name enthält den Text). */}
+            <input
+              type="search"
+              className="kunde-suche"
+              placeholder="Kund:in suchen …"
+              value={kundeSuche}
+              onChange={(e) => setKundeSuche(e.target.value)}
+            />
             <select name="kunde_id" value={form.kunde_id} onChange={handleChange} required>
               <option value="">– bitte wählen –</option>
-              {kundenOpts.map((k) => (
+              {kundenAuswahl.map((k) => (
                 <option key={k.kunde_id} value={k.kunde_id}>
                   {k.nachname}, {k.vorname}
                 </option>
@@ -282,9 +310,14 @@ export default function AuftraegePage() {
           </label>
           <label>
             Voraussichtlich fertig
+            {/* lang="en-GB": das native Datumsfeld zeigt das Datum im Format der
+                angegebenen Sprache an. en-GB nutzt Tag/Monat/Jahr, also erscheint
+                TT/MM/JJJJ statt der US-Schreibweise MM/TT/JJJJ. Gespeichert wird
+                intern weiterhin JJJJ-MM-TT (das ändert das Format nicht). */}
             <input
               name="voraussichtlich_fertig"
               type="date"
+              lang="en-GB"
               min={heuteIso()}
               value={form.voraussichtlich_fertig}
               onChange={handleChange}
@@ -381,7 +414,7 @@ export default function AuftraegePage() {
                         ? `${a.mitarbeiter_nachname}, ${a.mitarbeiter_vorname}`
                         : "—"}
                     </td>
-                    <td>{nurDatum(a.angenommen_am)}</td>
+                    <td>{formatDatum(a.angenommen_am)}</td>
                     <td>
                       {/* Status-Auswahl: ändert direkt (inkl. Verlaufseintrag). */}
                       <select
@@ -438,16 +471,16 @@ export default function AuftraegePage() {
                             </div>
                             <div>
                               <dt>Angenommen am</dt>
-                              <dd>{nurDatum(detail.angenommen_am)}</dd>
+                              <dd>{formatDatum(detail.angenommen_am)}</dd>
                             </div>
                             <div>
                               <dt>Voraussichtlich fertig</dt>
-                              <dd>{nurDatum(detail.voraussichtlich_fertig)}</dd>
+                              <dd>{formatDatum(detail.voraussichtlich_fertig)}</dd>
                             </div>
                             {detail.abgeschlossen_am && (
                               <div>
                                 <dt>Tatsächlich fertig</dt>
-                                <dd>{nurDatum(detail.abgeschlossen_am)}</dd>
+                                <dd>{formatDatum(detail.abgeschlossen_am)}</dd>
                               </div>
                             )}
                           </dl>
@@ -476,7 +509,7 @@ export default function AuftraegePage() {
                                 <span className={`status-badge status-${h.status}`}>
                                   {statusLabel(h.status)}
                                 </span>
-                                <span className="muted"> {nurDatum(h.geaendert_am)}</span>
+                                <span className="muted"> {formatDatum(h.geaendert_am)}</span>
                                 {h.mitarbeiter_nachname && (
                                   <span className="muted">
                                     {" "}

@@ -15,6 +15,7 @@ use App\Controllers\AuthController;
 use App\Controllers\KundeController;
 use App\Controllers\MitarbeiterController;
 use App\Controllers\AuftragController;
+use App\Controllers\StatistikController;
 
 // --- 1) Autoloader: lädt Klassen automatisch aus dem src/-Verzeichnis ---------
 //     Begründung: spart manuelle require-Aufrufe. Konvention: die Klasse
@@ -65,6 +66,7 @@ $router->get('/', function (): void {
             'GET /kunden', 'GET /kunden/auswahl', 'POST /kunden', 'PUT /kunden/{id}', 'DELETE /kunden/{id}',
             'GET /mitarbeiter', 'GET /mitarbeiter/auswahl', 'POST /mitarbeiter', 'PUT /mitarbeiter/{id}', 'DELETE /mitarbeiter/{id}',
             'GET /auftraege', 'GET /auftraege/{id}', 'POST /auftraege', 'PUT /auftraege/{id}', 'PUT /auftraege/{id}/status', 'DELETE /auftraege/{id}',
+            'GET /statistik',
         ],
     ]);
 });
@@ -152,6 +154,13 @@ $router->put('/auftraege/{id}/status', function ($params) use ($auftragControlle
 $router->delete('/auftraege/{id}',    function ($params) use ($auftragController) {
     Auth::requireLogin();
     $auftragController->delete($params);
+});
+
+// --- Statistik / Startseite (für alle Angemeldeten) --------------------------
+$statistikController = new StatistikController();
+$router->get('/statistik', function () use ($statistikController) {
+    Auth::requireLogin();
+    $statistikController->index();
 });
 
 // --- 4) Anfrage abarbeiten; Fehler einheitlich als JSON ausgeben --------------
