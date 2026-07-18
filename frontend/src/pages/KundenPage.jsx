@@ -155,7 +155,7 @@ export default function KundenPage() {
     <div className="kunden-page">
       <section className="card">
         <h2>{editing ? "Kund:in bearbeiten" : "Neue:r Kund:in"}</h2>
-        <form onSubmit={handleSubmit} className="form-grid">
+        <form onSubmit={handleSubmit} className="form-grid" data-tour="kunden-form">
           <label>
             Vorname *
             <input name="vorname" value={form.vorname} onChange={handleChange} required />
@@ -213,6 +213,7 @@ export default function KundenPage() {
             placeholder="Suchen (Name oder E-Mail) …"
             value={query}
             onChange={handleSearch}
+            data-tour="kunden-search"
           />
         </div>
 
@@ -226,7 +227,7 @@ export default function KundenPage() {
           </p>
         ) : (
           <>
-            <table className="table">
+            <table className="table" data-tour="kunden-table">
               <thead>
                 <tr>
                   <th>Name</th>
@@ -267,7 +268,7 @@ export default function KundenPage() {
             </table>
 
             {/* Seitennavigation */}
-            <div className="pagination">
+            <div className="pagination" data-tour="kunden-pagination">
               <button
                 type="button"
                 className="btn-secondary"

@@ -278,6 +278,7 @@ export default function AuftraegePage() {
               placeholder="Kund:in suchen …"
               value={kundeSuche}
               onChange={(e) => setKundeSuche(e.target.value)}
+              data-tour="auftrag-kundensuche"
             />
             <select name="kunde_id" value={form.kunde_id} onChange={handleChange} required>
               <option value="">– bitte wählen –</option>
@@ -330,6 +331,7 @@ export default function AuftraegePage() {
               min={heuteIso()}
               value={form.voraussichtlich_fertig}
               onChange={handleChange}
+              data-tour="auftrag-datum"
             />
           </label>
           <label className="full">
@@ -378,7 +380,7 @@ export default function AuftraegePage() {
           <h2>{nurMeine ? "Meine Aufträge" : "Alle Aufträge"} ({total})</h2>
           <div className="list-tools">
             {/* Umschalter: eigene Aufträge (Standard) oder alle. */}
-            <label className="scope-toggle">
+            <label className="scope-toggle" data-tour="auftrag-scope">
               <input
                 type="checkbox"
                 checked={nurMeine}
@@ -392,6 +394,7 @@ export default function AuftraegePage() {
               placeholder="Suchen (Gegenstand, Hersteller, Kund:in, Bearbeiter:in) …"
               value={query}
               onChange={handleSearch}
+              data-tour="auftrag-search"
             />
           </div>
         </div>
@@ -409,7 +412,7 @@ export default function AuftraegePage() {
               : "Noch keine Aufträge vorhanden."}
           </p>
         ) : (
-          <table className="table">
+          <table className="table" data-tour="auftrag-table">
             <thead>
               <tr>
                 <th>Nr.</th>

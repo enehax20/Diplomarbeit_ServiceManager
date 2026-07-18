@@ -142,6 +142,11 @@ bilden die technische Grundlage für Datenbank, Backend und Frontend.
   Testdaten sind bewusst **nicht** Teil des Programmcodes, sondern werden von außen
   erzeugt und in die Datenbank eingespielt.
 
+> **📷 Screenshot-Hinweis:** phpMyAdmin im Browser (`localhost:8080`) mit den vier
+> Tabellen – oder das Terminal nach `docker compose up -d` mit den gestarteten
+> Containern (Datenbank, Backend, phpMyAdmin). Illustriert die laufende
+> Docker-Umgebung.
+
 ### 4.2 Datenbank
 
 #### 4.2.1 Datenbankdesign
@@ -171,6 +176,9 @@ Da diese Werte fachlich fest vorgegeben sind und von Benutzer:innen nie geänder
 werden, ist eine Auswahlliste die einfachste korrekte Lösung – eine eigene
 Tabelle dafür wäre unnötig.
 
+> **📷 Screenshot-Hinweis:** ER-Diagramm der vier Tabellen mit ihren Beziehungen
+> (aus dem Datenmodell-Kapitel oder der phpMyAdmin-„Designer"-Ansicht).
+
 ### 4.3 Backend (REST-API)
 
 #### 4.3.1 Aufbau
@@ -187,6 +195,10 @@ Router und eine neue Methode im Controller.
 Alle Datenbankabfragen verwenden Prepared Statements. Vereinfacht gesagt: Die
 eingegebenen Werte werden getrennt vom Befehl an die Datenbank übergeben, sodass
 Eingaben niemals als Befehl ausgeführt werden können.
+
+> **📷 Screenshot-Hinweis:** Ordnerstruktur des Backends (`public/index.php`,
+> `src/` mit den Controllern und Hilfsklassen) oder die JSON-Antwort der
+> API-Startseite mit der Liste aller Endpunkte.
 
 #### 4.3.2 Anmeldung und Sicherheit
 
@@ -217,7 +229,13 @@ Weil ein Betrieb schnell mehrere hundert Kund:innen hat, liefert die Liste die
 Daten **seitenweise** (Pagination): Es werden nur die Einträge der aktuellen Seite
 geladen, dazu die Gesamtzahl und die Anzahl der Seiten. Über einen optionalen
 Suchbegriff kann zusätzlich nach Name oder E-Mail gefiltert werden. So bleibt die
-Anwendung auch bei vielen Daten schnell.
+Anwendung auch bei vielen Daten schnell. Seite und Suchbegriff werden als
+**GET-Parameter** an die Adresse angehängt (z. B. `GET /kunden?page=2&q=mann`) –
+das ist die korrekte HTTP-Methode zum reinen Abfragen von Daten.
+
+> **📷 Screenshot-Hinweis:** Beispielantwort von `GET /kunden?page=1&perPage=20`
+> im Browser (oder in einem API-Werkzeug) – zeigt das einheitliche Format
+> `{ data, total, page, perPage, totalPages }`.
 
 Die Verwaltung der Mitarbeiter:innen funktioniert nach demselben Muster, ist aber
 den Administrator:innen vorbehalten. Damit auch normale Mitarbeiter:innen beim
@@ -246,6 +264,31 @@ Abschlusszeitpunkt gesetzt und beim Zurückstufen wieder entfernt. Der
 Statusverlauf hält außerdem fest, **wer** die Änderung ausgelöst hat (die
 angemeldete Person). Dadurch ist jeder Bearbeitungsschritt nachvollziehbar.
 
+Zwei Erweiterungen kamen nach Rücksprache mit dem Betreuer hinzu. Erstens lässt
+sich die Auftragsliste über den Parameter `mein` auf die **eigenen Aufträge** der
+angemeldeten Person einschränken (`GET /auftraege?mein=1`); das ist die
+Standardansicht für Mitarbeiter:innen, sie können aber jederzeit alle Aufträge
+einblenden. Zweitens prüft das Backend beim Anlegen und Bearbeiten das
+**voraussichtliche Fertigstellungsdatum**: Es muss ein gültiges Datum sein und darf
+nicht in der Vergangenheit liegen – ein geplanter Termin, der schon vorbei ist,
+ergibt fachlich keinen Sinn.
+
+> **📷 Screenshot-Hinweis:** Einzelabruf `GET /auftraege/{id}` als JSON – zeigt die
+> Auftragsdaten samt dem Feld `historie` (der vollständige Statusverlauf).
+
+#### 4.3.5 Kennzahlen für die Startseite
+
+Für die Startseite (Cockpit) liefert ein eigener Endpunkt (`GET /statistik`) die
+wichtigsten Zahlen gebündelt: die Gesamtzahl der Kund:innen und Aufträge, die
+Anzahl der Aufträge „in Arbeit" (alles außer fertig oder abgeholt), die
+persönlichen Zahlen der angemeldeten Person (eigene Aufträge gesamt und davon in
+Arbeit) sowie die fünf Kund:innen mit den meisten Aufträgen. So muss die
+Oberfläche nur **eine einzige Anfrage** stellen, statt viele Einzelwerte getrennt
+zu berechnen.
+
+> **📷 Screenshot-Hinweis:** JSON-Antwort von `GET /statistik` – zeigt die
+> gebündelten Kennzahlen inklusive der Liste `topKunden`.
+
 ### 4.4 Frontend (Benutzeroberfläche)
 
 #### 4.4.1 Aufbau
@@ -258,6 +301,10 @@ Serveraufrufe erfolgen mit der Einstellung, das Anmelde-Cookie mitzusenden, dami
 das Backend die angemeldete Person erkennt. Der Anmeldezustand wird zentral
 verwaltet, sodass jede Seite darauf zugreifen kann.
 
+> **📷 Screenshot-Hinweis:** (1) Login-Seite mit Feldern für Benutzername und
+> Passwort. (2) Kopfzeile nach der Anmeldung mit Logo, Navigation, Name und Rolle
+> sowie Abmelde- und Hilfe-Button (?).
+
 #### 4.4.2 Kund:innen-Seite
 
 Die Kund:innen-Seite zeigt oben ein Formular zum Anlegen bzw. Bearbeiten und
@@ -268,6 +315,16 @@ ungültig" oder „Telefonnummer ist bereits vergeben" – werden verständlich
 angezeigt. Nach jeder Änderung wird die aktuelle Seite neu geladen, damit
 Sortierung und Seitenzahl korrekt bleiben.
 
+Der aktuelle Seiten- und Suchzustand steht dabei in der **Adresszeile** des
+Browsers (z. B. `…/kunden?page=2&q=mann`). Dadurch lässt sich eine bestimmte
+Ansicht als Lesezeichen speichern oder weitergeben, und die Zurück-Taste des
+Browsers funktioniert wie erwartet. Dieselbe Technik wird auch auf der
+Aufträge-Seite verwendet.
+
+> **📷 Screenshot-Hinweis:** Kund:innen-Seite mit dem Formular oben, der Liste, dem
+> Suchfeld und der Seitennavigation. Die Adresszeile sollte einen Parameter wie
+> `?page=2` zeigen.
+
 #### 4.4.3 Mitarbeiter:innen-Seite
 
 Diese Seite ist nur für Administrator:innen sichtbar. Sie erlaubt das Anlegen und
@@ -275,6 +332,10 @@ Bearbeiten von Mitarbeiter:innen inklusive Rolle und Passwort. Das eigene Konto
 kann man aus Sicherheitsgründen nicht löschen, nicht deaktivieren und sich nicht
 selbst die Administrator-Rolle entziehen – so kann man sich nicht versehentlich
 selbst aussperren.
+
+> **📷 Screenshot-Hinweis:** Mitarbeiter:innen-Seite (nur als Admin sichtbar) mit
+> dem Formular (inkl. Rolle und Passwort) und der Tabelle aller Konten mit
+> Rolle und Status.
 
 #### 4.4.4 Aufträge-Seite
 
@@ -286,6 +347,18 @@ ein farbiges Auswahlfeld ändern – die Farbe macht den aktuellen Stand auf ein
 Blick erkennbar. Auch hier gibt es Seitennavigation und Suche; sortiert wird nach
 dem zuletzt geänderten Auftrag, sodass gerade bearbeitete Aufträge oben stehen.
 
+Mehrere Details erleichtern die Bedienung. Weil ein Betrieb viele Kund:innen hat,
+besitzt das Auswahlfeld für die Kund:in ein eigenes **Suchfeld**: Man tippt einen
+Namen und die Auswahl filtert sich sofort. Das Fertigstellungsdatum wird im
+europäischen Format **TT/MM/JJJJ** angezeigt, und Tage in der Vergangenheit sind
+gesperrt. Standardmäßig sehen Mitarbeiter:innen zunächst nur **ihre eigenen**
+Aufträge; über den Schalter „Nur meine Aufträge" lässt sich auf alle Aufträge
+umschalten.
+
+> **📷 Screenshot-Hinweis:** (1) Auftragsformular mit der Kund:innen-Suche über dem
+> Auswahlfeld und dem Datumsfeld. (2) Auftragsliste mit dem farbigen
+> Status-Auswahlfeld und dem Schalter „Nur meine Aufträge".
+
 Über die Schaltfläche „Verlauf" klappt zu jedem Auftrag ein Detailbereich auf. Er
 zeigt die zusätzlichen Angaben (Titel, Hersteller, Annahmedatum, voraussichtliche
 und tatsächliche Fertigstellung), die Problembeschreibung und die Diagnose sowie
@@ -293,6 +366,39 @@ den vollständigen **Statusverlauf** mit Zeitpunkt und bearbeitender Person. Ist
 Auftrag abgeschlossen und wurde ein Plandatum angegeben, zeigt der Bereich
 zusätzlich, ob die Reparatur früher, pünktlich oder später als geplant fertig
 wurde (in Tagen).
+
+> **📷 Screenshot-Hinweis:** Ein Auftrag mit aufgeklapptem „Verlauf"-Bereich – zeigt
+> die Detailangaben und den farbig gekennzeichneten Statusverlauf mit Zeitpunkten
+> und bearbeitender Person.
+
+#### 4.4.5 Startseite (Cockpit)
+
+Nach der Anmeldung – und über das Logo jederzeit wieder erreichbar – erscheint die
+Startseite. Sie begrüßt die angemeldete Person und zeigt die wichtigsten Zahlen als
+**anklickbare Kacheln**: die eigenen Aufträge (in Arbeit und gesamt), alle Aufträge
+(in Arbeit und gesamt) sowie die Anzahl der Kund:innen. Ein Klick auf eine Kachel
+führt direkt zur passenden, bereits gefilterten Liste. Darunter steht eine Tabelle
+mit den Kund:innen, die die meisten Aufträge haben. Alle Werte stammen gebündelt
+vom Endpunkt `GET /statistik`.
+
+> **📷 Screenshot-Hinweis:** Startseite mit den Kennzahl-Kacheln (u. a. „Meine
+> Aufträge" und „Aufträge gesamt") und der Tabelle „Kund:innen mit den meisten
+> Aufträgen".
+
+#### 4.4.6 Hilfe: geführter Rundgang
+
+Damit sich neue Mitarbeiter:innen schnell zurechtfinden, gibt es in der Kopfzeile
+jeder Seite einen **Hilfe-Button (?)**. Ein Klick startet einen geführten Rundgang:
+Nacheinander wird jeweils ein Bedienelement hervorgehoben (der Rest des Bildschirms
+wird abgedunkelt) und in einem kurzen Text erklärt. Mit „Weiter"/„Zurück" blättert
+man durch die Schritte; „Fertig" oder die Esc-Taste beenden den Rundgang. Jede
+Seite hat dabei ihre eigenen Erklärungen. Der Rundgang ist bewusst **selbst
+programmiert** (ohne Zusatzbibliothek): Die Position des jeweils erklärten Elements
+wird im Browser ermittelt und ein hervorhebender Rahmen darübergelegt.
+
+> **📷 Screenshot-Hinweis:** Laufender Rundgang – ein hervorgehobenes Element mit
+> abgedunkeltem Hintergrund und dem Erklär-Kästchen samt Schritt­zähler (z. B.
+> „2 / 5") und „Weiter"-Button.
 
 ### 4.5 Testdaten
 
@@ -304,6 +410,9 @@ klare Trennung: **Testdaten sind kein Bestandteil des Programmcodes.** Der Code
 enthält keine fest eingebauten Datensätze, sondern arbeitet ausschließlich mit den
 Daten aus der Datenbank. Das entspricht der Anforderung an eine saubere,
 datengetriebene Anwendung.
+
+> **📷 Screenshot-Hinweis:** Mockaroo mit dem Feld-Schema für die Kund:innen oder
+> der Import-Dialog in phpMyAdmin (Tab „Importieren").
 
 ---
 
@@ -327,6 +436,12 @@ Das Ergebnis umfasst im Überblick:
   aufklappbarem Statusverlauf.
 - **Auftragslogik:** jeder Statuswechsel wird in einer Transaktion gemeinsam mit
   einem Verlaufseintrag gespeichert und ist damit vollständig nachvollziehbar.
+- **Startseite (Cockpit):** eine Übersichtsseite mit anklickbaren Kennzahlen
+  (eigene und gesamte Aufträge, Kund:innen) sowie den Kund:innen mit den meisten
+  Aufträgen.
+- **Zusätzliche Verbesserungen** nach Rücksprache mit dem Betreuer: persönliche
+  Auftragsansicht, Datumsvalidierung samt Anzeige im Format TT/MM/JJJJ, Suchfeld in
+  der Kund:innen-Auswahl und ein geführter Hilfe-Rundgang.
 
 ### Tabellarische Darstellung der Ziele
 
@@ -338,7 +453,7 @@ Das Ergebnis umfasst im Überblick:
 | Ziel-M-4 | Auftragsverwaltung mit Statusverlauf | Erreicht |
 | Ziel-M-5 | Anmeldung mit zwei Rollen und Validierung | Erreicht |
 | Ziel-K-1 | Serverseitige Pagination und Suche | Erreicht |
-| Ziel-K-2 | Startseite mit Kennzahlen (Cockpit) | Nicht erreicht |
+| Ziel-K-2 | Startseite mit Kennzahlen (Cockpit) | Erreicht |
 
 *Tabelle: Zielliste Realisierung Enes Haxhaja*
 
@@ -352,10 +467,27 @@ durchgängigen Prepared Statements gegen SQL-Injection geschützt. Im Frontend h
 sich die serverseitige Pagination als richtig erwiesen: Auch mit über 200
 Kund:innen bleibt die Anwendung schnell.
 
-Von den Kann-Zielen wurde die Pagination samt Suche umgesetzt. Die Startseite mit
-Kennzahlen (Cockpit) wurde in dieser Phase noch nicht realisiert, da der
-Schwerpunkt bewusst auf den Kernfunktionen – Stammdaten, Aufträge und Statusverlauf
-– lag. Sie ist als sinnvolle nächste Erweiterung vorgesehen.
+Von den Kann-Zielen wurden **beide** umgesetzt: die serverseitige Pagination samt
+Suche sowie die Startseite mit Kennzahlen (Cockpit).
+
+### Zusätzliche Erweiterungen
+
+Nach der Präsentation eines Zwischenstands kamen auf Anregung des Betreuers noch
+mehrere Verbesserungen hinzu:
+
+- **Ansicht in der Adresszeile:** Seite und Suchbegriff der Listen stehen als
+  GET-Parameter in der URL. So sind Ansichten teilbar bzw. als Lesezeichen
+  speicherbar, und die Zurück-Taste des Browsers funktioniert wie erwartet.
+- **Datumsvalidierung und -format:** Das voraussichtliche Fertigstellungsdatum muss
+  gültig sein und darf nicht in der Vergangenheit liegen; angezeigt wird es
+  einheitlich im Format TT/MM/JJJJ.
+- **Suchfeld in der Kund:innen-Auswahl:** Beim Anlegen eines Auftrags findet man die
+  richtige Kund:in auch bei mehreren hundert Einträgen schnell.
+- **Persönliche Auftragsansicht:** Mitarbeiter:innen sehen standardmäßig ihre
+  eigenen Aufträge, können aber jederzeit alle einblenden. Passend dazu zeigt die
+  Startseite eigene und gesamte Kennzahlen.
+- **Geführter Rundgang:** Ein Hilfe-Button (?) erklärt jede Seite Schritt für
+  Schritt und hebt die jeweiligen Bedienelemente hervor.
 
 ### Persönliche Reflexion
 
@@ -367,5 +499,8 @@ wichtig hat sich die Regel erwiesen, Statusänderung und Verlaufseintrag in eine
 Transaktion zusammenzufassen, damit der Verlauf immer verlässlich bleibt.
 
 Rückblickend bin ich mit dem Ergebnis zufrieden: Das System läuft stabil und
-erfüllt die gesetzten Muss-Ziele. Für die Zukunft plane ich, die Startseite mit
-Kennzahlen zu ergänzen und die Auswertungen weiter auszubauen.
+erfüllt alle Muss- und Kann-Ziele. Hilfreich war außerdem das Feedback des
+Betreuers, aus dem mehrere praktische Verbesserungen entstanden sind – etwa die
+persönliche Auftragsansicht und der geführte Hilfe-Rundgang. Für die Zukunft könnte
+man die Auswertungen auf der Startseite weiter ausbauen und die Anwendung z. B. um
+Druck- oder Exportfunktionen ergänzen.

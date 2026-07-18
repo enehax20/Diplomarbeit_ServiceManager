@@ -109,7 +109,7 @@ export default function MitarbeiterPage() {
     <div className="mitarbeiter-page">
       <section className="card">
         <h2>{editing ? "Mitarbeiter:in bearbeiten" : "Neue:r Mitarbeiter:in"}</h2>
-        <form onSubmit={handleSubmit} className="form-grid">
+        <form onSubmit={handleSubmit} className="form-grid" data-tour="mitarbeiter-form">
           <label>
             Vorname *
             <input name="vorname" value={form.vorname} onChange={handleChange} required />
@@ -133,7 +133,12 @@ export default function MitarbeiterPage() {
           </label>
           <label>
             Rolle *
-            <select name="rolle" value={form.rolle} onChange={handleChange}>
+            <select
+              name="rolle"
+              value={form.rolle}
+              onChange={handleChange}
+              data-tour="mitarbeiter-rolle"
+            >
               <option value="mitarbeiter">mitarbeiter</option>
               <option value="admin">admin</option>
             </select>
@@ -148,6 +153,7 @@ export default function MitarbeiterPage() {
               placeholder={editing ? "leer lassen = unverändert" : ""}
               required={!editing}
               minLength={8}
+              data-tour="mitarbeiter-passwort"
             />
           </label>
 
@@ -186,7 +192,7 @@ export default function MitarbeiterPage() {
         ) : liste.length === 0 ? (
           <p className="muted">Noch keine Mitarbeiter:innen vorhanden.</p>
         ) : (
-          <table className="table">
+          <table className="table" data-tour="mitarbeiter-table">
             <thead>
               <tr>
                 <th>Name</th>

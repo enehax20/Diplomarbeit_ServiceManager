@@ -92,6 +92,25 @@ body {
   background: var(--bg);
 }
 
+/* Runder Hilfe-Button (?) in der Kopfzeile – startet den Rundgang. */
+.btn-help {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  width: 1.9rem;
+  height: 1.9rem;
+  padding: 0;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.btn-help:hover {
+  background: var(--bg);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
 .app-loading {
   max-width: 900px;
   margin: 2rem auto;
@@ -470,6 +489,97 @@ button:disabled {
 .stat-label {
   font-size: 0.85rem;
   color: var(--muted);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Geführter Rundgang (Tour): Overlay, Spotlight und Erklär-Kästchen.          */
+/* -------------------------------------------------------------------------- */
+
+/* Durchsichtige Ebene, die Klicks abfängt (Oberfläche bleibt während des
+   Rundgangs unbedienbar). Liegt über allem. */
+.tour-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+}
+
+/* Das hervorgehobene Element: der riesige Schatten dunkelt alles ringsum ab,
+   nur das "Loch" über dem Ziel bleibt hell. pointer-events:none, damit der
+   Schatten selbst keine Klicks schluckt. */
+.tour-spotlight {
+  position: fixed;
+  z-index: 1001;
+  border: 2px solid var(--primary);
+  border-radius: 8px;
+  box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.55);
+  pointer-events: none;
+  transition: top 0.15s ease, left 0.15s ease, width 0.15s ease, height 0.15s ease;
+}
+
+/* Erklär-Kästchen in Kartenoptik. */
+.tour-tooltip {
+  position: fixed;
+  z-index: 1002;
+  width: 320px;
+  max-width: calc(100vw - 24px);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
+  padding: 1rem 1.1rem;
+}
+/* Ohne Zielelement mittig im Bild anzeigen. */
+.tour-tooltip-center {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.tour-tooltip-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+/* Schritt-Zähler als kleine Plakette (wie role-/status-badge). */
+.tour-step-chip {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--primary);
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+}
+.tour-close {
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  padding: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.tour-close:hover {
+  color: var(--text);
+  background: transparent;
+}
+.tour-titel {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+}
+.tour-text {
+  margin: 0 0 0.9rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.tour-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+.tour-actions button {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.9rem;
 }
 
 @media (max-width: 560px) {
