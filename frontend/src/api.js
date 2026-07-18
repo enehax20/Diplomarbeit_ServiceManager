@@ -81,11 +81,13 @@ export const mitarbeiterApi = {
 
 // Endpunkte für Aufträge.
 export const auftraegeApi = {
-  // GET /auftraege?page=&perPage=&q= -> EINE Seite Aufträge (zuletzt aktualisierte zuerst).
+  // GET /auftraege?page=&perPage=&q=&mein= -> EINE Seite Aufträge (zuletzt aktualisierte zuerst).
+  // mein=true -> nur die dem/der Angemeldeten zugewiesenen Aufträge.
   // Antwort: { data, total, page, perPage, totalPages }
-  list: ({ page = 1, perPage = 10, q = "" } = {}) => {
+  list: ({ page = 1, perPage = 10, q = "", mein = false } = {}) => {
     const params = new URLSearchParams({ page, perPage });
     if (q) params.set("q", q);
+    if (mein) params.set("mein", "1");
     return request(`/auftraege?${params.toString()}`);
   },
   // GET /auftraege/{id} -> ein Auftrag inkl. Statusverlauf (historie)

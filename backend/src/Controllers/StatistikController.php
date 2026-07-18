@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Auth;
 use App\Database;
 use App\Response;
 
@@ -29,6 +30,22 @@ class StatistikController
              WHERE status IN ('ANGENOMMEN', 'IN_DIAGNOSE', 'IN_REPARATUR')"
         )->fetchColumn();
 
+        // Persönliche Kennzahlen der angemeldeten Person (mir zugewiesene Aufträge).
+        // Prepared Statement, weil hier ein Wert (die eigene ID) einfließt.
+        $meId = (int) Auth::user()['mitarbeiter_id'];
+
+        $meineStmt = $pdo->prepare('SELECT COUNT(*) FROM auftrag WHERE mitarbeiter_id = :me');
+        $meineStmt->execute([':me' => $meId]);
+        $meineGesamt = (int) $meineStmt->fetchColumn();
+
+        $meineOffenStmt = $pdo->prepare(
+            "SELECT COUNT(*) FROM auftrag
+             WHERE mitarbeiter_id = :me
+               AND status IN ('ANGENOMMEN', 'IN_DIAGNOSE', 'IN_REPARATUR')"
+        );
+        $meineOffenStmt->execute([':me' => $meId]);
+        $meineOffen = (int) $meineOffenStmt->fetchColumn();
+
         // Kund:innen mit den meisten Aufträgen (Top 5). INNER JOIN: nur Kund:innen,
         // die mindestens einen Auftrag haben.
         $topKunden = $pdo->query(
@@ -50,6 +67,8 @@ class StatistikController
             'kundenGesamt'    => $kundenGesamt,
             'auftraegeGesamt' => $auftraegeGesamt,
             'auftraegeOffen'  => $auftraegeOffen,
+            'meineGesamt'     => $meineGesamt,
+            'meineOffen'      => $meineOffen,
             'topKunden'       => $topKunden,
         ], 200);
     }

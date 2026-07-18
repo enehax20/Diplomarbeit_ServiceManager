@@ -71,16 +71,20 @@ export default function AuftraegePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
   const query = searchParams.get("q") ?? "";
+  // "Nur meine Aufträge" ist der Standard (mein-Filter). Nur mein=0 zeigt alle.
+  const nurMeine = searchParams.get("mein") !== "0";
 
-  // Schreibt Seite/Suche in die URL. Standardwerte (Seite 1, leere Suche) lassen
-  // wir weg, damit die URL sauber bleibt. replace=true beim Tippen, damit die
-  // Zurück-Taste nicht bei jedem Buchstaben einen Eintrag anlegt.
+  // Schreibt Seite/Suche/Filter in die URL. Standardwerte (Seite 1, leere Suche,
+  // "nur meine") lassen wir weg, damit die URL sauber bleibt. replace=true beim
+  // Tippen, damit die Zurück-Taste nicht bei jedem Buchstaben einen Eintrag anlegt.
   function updateParams(next, { replace = false } = {}) {
     const p = next.page ?? page;
     const q = next.q ?? query;
+    const meine = next.nurMeine ?? nurMeine;
     const params = {};
     if (p > 1) params.page = String(p);
     if (q) params.q = q;
+    if (!meine) params.mein = "0"; // nur den abweichenden Fall "alle" in die URL
     setSearchParams(params, { replace });
   }
 
@@ -100,15 +104,15 @@ export default function AuftraegePage() {
       loadAuftraege();
     }, 300);
     return () => clearTimeout(timer);
-    // loadAuftraege nutzt page/query aus dem Closure -> bewusst als Abhängigkeit.
+    // loadAuftraege nutzt page/query/nurMeine aus dem Closure -> als Abhängigkeit.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, query]);
+  }, [page, query, nurMeine]);
 
   async function loadAuftraege() {
     setLoading(true);
     setError(null);
     try {
-      const res = await auftraegeApi.list({ page, perPage: PER_PAGE, q: query });
+      const res = await auftraegeApi.list({ page, perPage: PER_PAGE, q: query, mein: nurMeine });
       setListe(res.data);
       setTotal(res.total);
       setTotalPages(res.totalPages);
@@ -125,6 +129,11 @@ export default function AuftraegePage() {
   // Suchfeld: bei jeder Änderung zurück auf Seite 1 und den Begriff in die URL.
   function handleSearch(event) {
     updateParams({ page: 1, q: event.target.value }, { replace: true });
+  }
+
+  // Umschalter "Nur meine Aufträge" (angehakt = nur meine, sonst alle).
+  function handleScopeChange(event) {
+    updateParams({ page: 1, nurMeine: event.target.checked }, { replace: true });
   }
 
   function handleChange(event) {
@@ -366,14 +375,25 @@ export default function AuftraegePage() {
 
       <section className="card">
         <div className="list-head">
-          <h2>Aufträge ({total})</h2>
-          <input
-            className="search-input"
-            type="search"
-            placeholder="Suchen (Gegenstand, Hersteller, Kund:in, Bearbeiter:in) …"
-            value={query}
-            onChange={handleSearch}
-          />
+          <h2>{nurMeine ? "Meine Aufträge" : "Alle Aufträge"} ({total})</h2>
+          <div className="list-tools">
+            {/* Umschalter: eigene Aufträge (Standard) oder alle. */}
+            <label className="scope-toggle">
+              <input
+                type="checkbox"
+                checked={nurMeine}
+                onChange={handleScopeChange}
+              />
+              Nur meine Aufträge
+            </label>
+            <input
+              className="search-input"
+              type="search"
+              placeholder="Suchen (Gegenstand, Hersteller, Kund:in, Bearbeiter:in) …"
+              value={query}
+              onChange={handleSearch}
+            />
+          </div>
         </div>
 
         {!editing && error && <p className="error">{error}</p>}
@@ -382,7 +402,11 @@ export default function AuftraegePage() {
           <p>Wird geladen …</p>
         ) : liste.length === 0 ? (
           <p className="muted">
-            {query ? "Keine Treffer für die Suche." : "Noch keine Aufträge vorhanden."}
+            {query
+              ? "Keine Treffer für die Suche."
+              : nurMeine
+              ? "Ihnen sind aktuell keine Aufträge zugewiesen."
+              : "Noch keine Aufträge vorhanden."}
           </p>
         ) : (
           <table className="table">

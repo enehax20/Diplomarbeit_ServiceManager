@@ -52,23 +52,32 @@ class AuftragController
         $perPage = (int) ($_GET['perPage'] ?? 10);
         $perPage = max(1, min(100, $perPage)); // 1..100
         $q       = trim((string) ($_GET['q'] ?? ''));
+        // "mein=1": nur die Aufträge der angemeldeten Person (eigene Zuweisung).
+        // Standard im Frontend, damit Mitarbeiter:innen zuerst ihre eigenen sehen.
+        $nurMeine = ($_GET['mein'] ?? '') === '1';
 
-        // --- Optionale Suche: WHERE-Bedingung + Parameter zusammenbauen -------
+        // --- Bedingungen sammeln und mit AND verknüpfen -----------------------
         // Hinweis: Bei echten Prepared Statements darf derselbe Platzhalter NICHT
         // mehrfach vorkommen -> für jede Spalte ein eigener Platzhalter mit demselben Wert.
-        $where  = '';
+        $conds  = [];
         $params = [];
         if ($q !== '') {
-            // Suche über Gegenstand/Hersteller/Titel, Kund:in-Name UND Bearbeiter:in-Name.
-            $where = 'WHERE a.servicegegenstand LIKE :q1 OR a.hersteller LIKE :q2
+            // Suche über Gegenstand/Hersteller/Titel, Kund:in- UND Bearbeiter:in-Name.
+            // Klammern: die OR-Suche bleibt EIN Block, damit ein zusätzliches AND greift.
+            $conds[] = '(a.servicegegenstand LIKE :q1 OR a.hersteller LIKE :q2
                          OR a.titel LIKE :q3 OR k.vorname LIKE :q4 OR k.nachname LIKE :q5
-                         OR m.vorname LIKE :q6 OR m.nachname LIKE :q7';
+                         OR m.vorname LIKE :q6 OR m.nachname LIKE :q7)';
             $like = '%' . $q . '%';
-            $params = [
+            $params += [
                 ':q1' => $like, ':q2' => $like, ':q3' => $like, ':q4' => $like,
                 ':q5' => $like, ':q6' => $like, ':q7' => $like,
             ];
         }
+        if ($nurMeine) {
+            $conds[] = 'a.mitarbeiter_id = :meId';
+            $params[':meId'] = Auth::user()['mitarbeiter_id'];
+        }
+        $where = $conds ? 'WHERE ' . implode(' AND ', $conds) : '';
 
         // --- Gesamtzahl -------------------------------------------------------
         // Beide JOINs, weil die Suche Kund:in- UND Bearbeiter:in-Name einschließt
