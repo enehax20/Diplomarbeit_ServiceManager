@@ -9,6 +9,54 @@
 
 ---
 
+## Kurzfassung
+
+Das Teilprojekt **„ServiceManager"** ist eine Webanwendung zur Verwaltung von
+Reparaturaufträgen in einem Reparaturbetrieb. Das System erfasst Kund:innen und
+Mitarbeiter:innen, verwaltet Reparaturaufträge mit einem lückenlos
+nachvollziehbaren Statusverlauf und sichert den Zugang über eine
+rollenbasierte Anmeldung ab. Es ist bewusst **branchenübergreifend** gestaltet,
+sodass es für KFZ-Werkstätten sowie für Elektronik- und
+Haushaltsgeräte­reparaturen gleichermaßen einsetzbar ist. Technisch besteht die
+Anwendung aus drei sauber getrennten Schichten: einer MySQL-Datenbank für die
+Speicherung, einem PHP-Backend als REST-API für die gesamte Verarbeitungslogik
+und einer React-Oberfläche als Benutzeroberfläche. Ergänzend sorgen serverseitige
+Pagination mit Suche sowie eine Startseite mit Kennzahlen (Cockpit) dafür, dass
+die Lösung auch bei mehreren hundert Datensätzen übersichtlich und schnell bleibt.
+
+---
+
+## 1 Einleitung: Enes Haxhaja
+
+**Ausgangslage:**
+In vielen Reparaturbetrieben werden Aufträge noch mit Zetteln, Excel-Listen oder
+im Kopf verwaltet. Dadurch gehen Informationen leicht verloren, der aktuelle Stand
+eines Auftrags ist unklar, und es lässt sich später nicht mehr nachvollziehen, wer
+wann was bearbeitet hat. Gerade wenn ein Betrieb wächst und mehrere
+Mitarbeiter:innen an unterschiedlichen Geräten arbeiten, wird diese Art der
+Verwaltung schnell unübersichtlich und fehleranfällig.
+
+**Nutzen:**
+Durch den ServiceManager wird die Auftragsverwaltung digitalisiert und zentral an
+einer Stelle gebündelt. Kund:innen, Mitarbeiter:innen und Aufträge sind jederzeit
+abrufbar, und jeder Statuswechsel eines Auftrags wird automatisch protokolliert.
+So ist auf einen Blick erkennbar, welche Reparatur sich in welchem Stadium
+befindet und wer sie bearbeitet. Das spart Zeit, verhindert Doppelarbeit und macht
+den gesamten Ablauf für den Betrieb transparenter und verlässlicher.
+
+**Anforderungen des Auftraggebers:**
+Der Auftraggeber erwartet eine schlanke, im Alltag tatsächlich einsetzbare Lösung.
+Stammdaten von Kund:innen und Mitarbeiter:innen sollen zuverlässig angelegt,
+bearbeitet und gelöscht werden können. Reparaturaufträge müssen sich mit einem
+klaren Statusverlauf führen lassen, wobei jede Änderung nachvollziehbar bleibt.
+Der Zugang soll durch eine Anmeldung mit zwei Rollen (Administrator:in und
+Mitarbeiter:in) geschützt und alle Eingaben sollen geprüft werden. Bewusst **nicht**
+gefordert sind branchenspezifische Speziallösungen wie Rechnungswesen,
+Lagerverwaltung oder ein Kund:innen-Portal – das System soll klar, überschaubar
+und in der vorgegebenen Zeit umsetzbar bleiben.
+
+---
+
 ## 2 Zieldefinition: Enes Haxhaja
 
 Das Teilprojekt **„ServiceManager"** ist eine Webanwendung zur Verwaltung von
