@@ -40,7 +40,8 @@ export default function App() {
         <nav data-tour="nav">
           <NavLink to="/" end>Start</NavLink>
           <NavLink to="/kunden">Kund:innen</NavLink>
-          <NavLink to="/auftraege">Aufträge</NavLink>
+          {/* mein=1 -> man landet standardmäßig auf den EIGENEN Aufträgen. */}
+          <NavLink to="/auftraege?mein=1">Aufträge</NavLink>
           {/* Mitarbeiter-Verwaltung ist nur für Admins sichtbar. */}
           {isAdmin && <NavLink to="/mitarbeiter">Mitarbeiter:innen</NavLink>}
         </nav>

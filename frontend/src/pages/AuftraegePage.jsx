@@ -71,12 +71,16 @@ export default function AuftraegePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
   const query = searchParams.get("q") ?? "";
-  // "Nur meine Aufträge" ist der Standard (mein-Filter). Nur mein=0 zeigt alle.
-  const nurMeine = searchParams.get("mein") !== "0";
+  // "Nur meine Aufträge" wird in der URL als mein=1 dargestellt; die Ansicht
+  // "alle Aufträge" ist parameterlos (/auftraege). Man landet standardmäßig auf
+  // den eigenen Aufträgen, weil der Menüpunkt "Aufträge" und die Cockpit-Karten
+  // "Meine Aufträge" gezielt auf /auftraege?mein=1 verweisen.
+  const nurMeine = searchParams.get("mein") === "1";
 
-  // Schreibt Seite/Suche/Filter in die URL. Standardwerte (Seite 1, leere Suche,
-  // "nur meine") lassen wir weg, damit die URL sauber bleibt. replace=true beim
-  // Tippen, damit die Zurück-Taste nicht bei jedem Buchstaben einen Eintrag anlegt.
+  // Schreibt Seite/Suche/Filter in die URL. Seite 1 und leere Suche lassen wir
+  // weg, damit die URL sauber bleibt; die Ansicht "alle" ist ebenfalls parameterlos.
+  // replace=true beim Tippen, damit die Zurück-Taste nicht bei jedem Buchstaben
+  // einen Eintrag anlegt.
   function updateParams(next, { replace = false } = {}) {
     const p = next.page ?? page;
     const q = next.q ?? query;
@@ -84,7 +88,7 @@ export default function AuftraegePage() {
     const params = {};
     if (p > 1) params.page = String(p);
     if (q) params.q = q;
-    if (!meine) params.mein = "0"; // nur den abweichenden Fall "alle" in die URL
+    if (meine) params.mein = "1"; // eigene Aufträge: mein=1; "alle" bleibt parameterlos
     setSearchParams(params, { replace });
   }
 

@@ -37,7 +37,8 @@ export default function HomePage() {
           <>
             {/* Kennzahlen als anklickbare Karten (führen zur passenden Liste).
                 Die "meine"-Karten öffnen die Auftragsliste mit dem eigenen Filter
-                (?mein=1), die Gesamt-Karten mit allen Aufträgen (?mein=0). */}
+                (?mein=1), die Gesamt-Karten mit allen Aufträgen (parameterloses
+                /auftraege). */}
             <section className="stat-grid" data-tour="home-stats">
               <Link to="/auftraege?mein=1" className="stat-card" data-tour="home-meine">
                 <span className="stat-zahl">{stats.meineOffen}</span>
@@ -47,11 +48,11 @@ export default function HomePage() {
                 <span className="stat-zahl">{stats.meineGesamt}</span>
                 <span className="stat-label">Meine Aufträge gesamt</span>
               </Link>
-              <Link to="/auftraege?mein=0" className="stat-card">
+              <Link to="/auftraege" className="stat-card">
                 <span className="stat-zahl">{stats.auftraegeOffen}</span>
                 <span className="stat-label">Aufträge in Arbeit (alle)</span>
               </Link>
-              <Link to="/auftraege?mein=0" className="stat-card">
+              <Link to="/auftraege" className="stat-card">
                 <span className="stat-zahl">{stats.auftraegeGesamt}</span>
                 <span className="stat-label">Aufträge gesamt</span>
               </Link>
